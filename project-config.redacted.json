@@ -1,0 +1,10 @@
+{
+  "name": "newline_training_portal",
+  "build_command": "pnpm run build",
+  "dev_command": "pnpm run dev",
+  "test_command": "pnpm test",
+  "db_command": "pnpm db:push",
+  "port": 3000,
+  "capabilities": ["db", "server", "user"],
+  "required_environment": "See ../environment/CONFIGURATION_TEMPLATE.txt"
+}

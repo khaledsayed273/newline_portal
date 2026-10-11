@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1783643778119,
+      "tag": "0000_tired_fenris",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1783643920121,
+      "tag": "0001_milky_vargas",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1783643942178,
+      "tag": "0002_rich_scourge",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1783763225508,
+      "tag": "0003_typical_red_shift",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1783799700216,
+      "tag": "0004_youthful_venom",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1783806486639,
+      "tag": "0005_mute_pandemic",
+      "breakpoints": true
+    }
+  ]
+}
