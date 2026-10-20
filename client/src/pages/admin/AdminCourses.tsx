@@ -1,6 +1,15 @@
 import PortalLayout from "@/components/PortalLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import {
@@ -10,6 +19,7 @@ import {
   Edit2,
   Eye,
   EyeOff,
+  FileText,
   Plus,
   Trash2,
   Video,
@@ -73,7 +83,7 @@ function CourseForm({
           <label className="text-sm font-semibold text-foreground mb-1.5 block">
             اسم الدورة *
           </label>
-          <input
+          <Input
             value={title}
             onChange={e => setTitle(e.target.value)}
             required
@@ -85,7 +95,7 @@ function CourseForm({
           <label className="text-sm font-semibold text-foreground mb-1.5 block">
             الوصف
           </label>
-          <textarea
+          <Textarea
             value={description}
             onChange={e => setDescription(e.target.value)}
             rows={3}
@@ -97,40 +107,45 @@ function CourseForm({
           <label className="text-sm font-semibold text-foreground mb-1.5 block">
             الإدارة
           </label>
-          <select
-            value={departmentId}
-            onChange={e => setDepartmentId(e.target.value)}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          <Select
+            value={departmentId ? String(departmentId) : "__all__"}
+            onValueChange={v => setDepartmentId(v === "__all__" ? "" : v)}
           >
-            <option value="">-- اختر الإدارة --</option>
-            {departments.map(d => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="-- اختر الإدارة --" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">-- اختر الإدارة --</SelectItem>
+              {departments.map(d => (
+                <SelectItem key={d.id} value={String(d.id)}>
+                  {d.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <label className="text-sm font-semibold text-foreground mb-1.5 block">
             المستوى
           </label>
-          <select
-            value={level}
-            onChange={e => setLevel(e.target.value)}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-          >
-            {levelOptions.map(l => (
-              <option key={l.value} value={l.value}>
-                {l.label}
-              </option>
-            ))}
-          </select>
+          <Select value={level} onValueChange={setLevel}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="المستوى" />
+            </SelectTrigger>
+            <SelectContent>
+              {levelOptions.map(l => (
+                <SelectItem key={l.value} value={l.value}>
+                  {l.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <label className="text-sm font-semibold text-foreground mb-1.5 block">
             المدة (بالدقائق)
           </label>
-          <input
+          <Input
             type="number"
             value={duration}
             onChange={e => setDuration(e.target.value)}
@@ -143,7 +158,7 @@ function CourseForm({
           <label className="text-sm font-semibold text-foreground mb-1.5 block">
             الترتيب
           </label>
-          <input
+          <Input
             type="number"
             value={order}
             onChange={e => setOrder(e.target.value)}
@@ -155,7 +170,7 @@ function CourseForm({
           <label className="text-sm font-semibold text-foreground mb-1.5 block">
             رابط الصورة المصغرة
           </label>
-          <input
+          <Input
             value={thumbnailUrl}
             onChange={e => setThumbnailUrl(e.target.value)}
             className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -163,7 +178,7 @@ function CourseForm({
           />
         </div>
         <div className="sm:col-span-2 flex items-center gap-3">
-          <input
+          <Input
             type="checkbox"
             id="published"
             checked={isPublished}
@@ -179,7 +194,8 @@ function CourseForm({
         </div>
       </div>
       <div className="flex gap-3">
-        <Button type="submit" disabled={isLoading} className="font-bold">
+<Button type="submit" variant="default" disabled={isLoading} 
+className="font-bold">
           {isLoading
             ? "جاري الحفظ..."
             : initial
@@ -210,26 +226,76 @@ function LessonForm({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [videoUrl, setVideoUrl] = useState(initial?.videoUrl ?? "");
+  const [fileUrl, setFileUrl] = useState(initial?.fileUrl ?? "");
+  const [fileType, setFileType] = useState(initial?.fileType ?? "");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [contentKind, setContentKind] = useState<"video" | "file">(
+    initial?.fileUrl ? "file" : "video"
+  );
   const [videoType, setVideoType] = useState(initial?.videoType ?? "youtube");
   const [duration, setDuration] = useState(initial?.duration ?? "");
   const [order, setOrder] = useState(initial?.order ?? 0);
   const [isPublished, setIsPublished] = useState(initial?.isPublished ?? true);
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      let uploadedFileUrl = fileUrl || null;
+      let uploadedFileType = fileType || null;
+      if (contentKind === "video") {
+        if (!videoUrl.trim()) {
+          toast.error("أدخل رابط الفيديو الخارجي");
+          return;
+        }
+        try {
+          const url = new URL(videoUrl.trim());
+          if (url.protocol !== "http:" && url.protocol !== "https:") {
+            throw new Error();
+          }
+        } catch {
+          toast.error("أدخل رابط فيديو خارجي صالحًا");
+          return;
+        }
+      }
+      if (contentKind === "file" && selectedFile) {
+          if (selectedFile.size === 0) {
+            toast.error("الملف المحدد حجمه صفر، اختر ملفًا صالحًا");
+            return;
+          }
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        const response = await fetch("/api/admin/course-lessons/upload", {
+          method: "POST",
+          body: formData,
+        });
+        if (!response.ok) {
+          const result = await response.json().catch(() => null);
+          throw new Error(result?.message || "فشل رفع الملف");
+        }
+        const result = await response.json();
+        uploadedFileUrl = result.fileUrl;
+        uploadedFileType = result.fileType;
+      }
+      onSave({
+        courseId,
+        title,
+        description: description || undefined,
+        videoUrl: contentKind === "video" ? videoUrl || null : null,
+        videoType: contentKind === "video" ? videoType : undefined,
+        fileUrl: contentKind === "file" ? uploadedFileUrl : null,
+        fileType: contentKind === "file" ? uploadedFileType : null,
+        duration: contentKind === "video" && duration ? Number(duration) : undefined,
+        order: Number(order),
+        isPublished,
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "فشل رفع الملف");
+    }
+  };
+
   return (
     <form
-      onSubmit={e => {
-        e.preventDefault();
-        onSave({
-          courseId,
-          title,
-          description: description || undefined,
-          videoUrl: videoUrl || undefined,
-          videoType,
-          duration: duration ? Number(duration) : undefined,
-          order: Number(order),
-          isPublished,
-        });
-      }}
+      onSubmit={handleSubmit}
       className="bg-muted/50 border border-border rounded-xl p-4 space-y-3 mt-3"
     >
       <h4 className="text-foreground">
@@ -237,7 +303,7 @@ function LessonForm({
       </h4>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="sm:col-span-2">
-          <input
+          <Input
             value={title}
             onChange={e => setTitle(e.target.value)}
             required
@@ -246,27 +312,88 @@ function LessonForm({
           />
         </div>
         <div>
-          <input
-            value={videoUrl}
-            onChange={e => setVideoUrl(e.target.value)}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-            placeholder="رابط الفيديو (YouTube أو مباشر)"
-          />
+          <div className="sm:col-span-2">
+            <Select
+              value={contentKind}
+              onValueChange={value => setContentKind(value as "video" | "file")}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="نوع المحتوى" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="video">فيديو</SelectItem>
+                <SelectItem value="file">ملف PDF / Word / ZIP</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {contentKind === "file" && fileUrl ? (
+            <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2 text-sm">
+              <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+              <span className="truncate text-foreground">
+                {fileUrl.split("/").pop() ?? fileUrl}
+              </span>
+              <a
+                href={fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+                className="text-primary hover:underline text-xs"
+              >
+                تحميل/فتح
+              </a>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setFileUrl("");
+                  setFileType("");
+                  setSelectedFile(null);
+                }}
+                className="text-destructive hover:bg-destructive/10"
+                title="حذف الملف"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          ) : contentKind === "file" ? (
+            <input
+              type="file"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setSelectedFile(file);
+                  setFileUrl("");
+                  setFileType(file.name.split(".").pop()?.toLowerCase() ?? "");
+                }
+              }}
+              accept=".pdf,.doc,.docx,.zip,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/zip"
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+            />
+          ) : (
+            <Input
+              value={videoUrl}
+              onChange={e => setVideoUrl(e.target.value)}
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              placeholder="رابط الفيديو الخارجي (YouTube أو Vimeo)"
+            />
+          )}
         </div>
-        <div>
-          <select
-            value={videoType}
-            onChange={e => setVideoType(e.target.value)}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-          >
-            <option value="youtube">YouTube</option>
-            <option value="vimeo">Vimeo</option>
-            <option value="direct">رابط مباشر</option>
-            <option value="embed">Embed</option>
-          </select>
-        </div>
-        <div>
-          <input
+        {contentKind === "video" && <div>
+          <Select value={videoType} onValueChange={setVideoType}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="نوع الفيديو" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="youtube">YouTube</SelectItem>
+              <SelectItem value="vimeo">Vimeo</SelectItem>
+                      <SelectItem value="direct">رابط فيديو خارجي</SelectItem>
+              <SelectItem value="embed">Embed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>}
+        {contentKind === "video" && <div>
+          <Input
             type="number"
             value={duration}
             onChange={e => setDuration(e.target.value)}
@@ -274,9 +401,9 @@ function LessonForm({
             className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             placeholder="المدة (ثانية)"
           />
-        </div>
+        </div>}
         <div>
-          <input
+          <Input
             type="number"
             value={order}
             onChange={e => setOrder(e.target.value)}
@@ -289,11 +416,12 @@ function LessonForm({
       <div className="flex gap-2">
         <Button
           type="submit"
+          variant="default"
           disabled={isLoading}
           size="sm"
           className="font-bold"
         >
-          {isLoading ? "..." : "حفظ"}
+          {isLoading ? "جاري الحفظ..." : "حفظ"}
         </Button>
         <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           إلغاء
@@ -370,7 +498,7 @@ function CourseRow({
   return (
     <div className="card overflow-hidden">
       <div className="flex items-center gap-3 p-4">
-        <button
+        <Button variant="ghost" 
           onClick={() => setExpanded(!expanded)}
           className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors"
         >
@@ -379,7 +507,7 @@ function CourseRow({
           ) : (
             <ChevronDown className="h-4 w-4" />
           )}
-        </button>
+        </Button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h4 className="text-foreground">{course.title}</h4>
@@ -388,43 +516,40 @@ function CourseRow({
             </Badge>
           </div>
           {course.description && (
-            <p className="text-xs text-muted-foreground truncate mt-0.5">
+            <h6 className="text-muted-foreground truncate mt-0.5">
               {course.description}
-            </p>
+            </h6>
           )}
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <button
+          <Button variant="ghost" size="sm" 
             onClick={() => setEditing(true)}
             className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
           >
             <Edit2 className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => {
-              if (confirm("هل تريد حذف هذه الدورة؟"))
-                deleteMutation.mutate({ id: course.id });
-            }}
+          </Button>
+          <Button variant="ghost" size="sm" 
+            onClick={() => deleteMutation.mutate({ id: course.id })}
             className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
           >
             <Trash2 className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </div>
       </div>
 
       {expanded && (
         <div className="border-t border-border px-4 pb-4">
           <div className="flex items-center justify-between mt-3 mb-2">
-            <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+            <h6 className="text-muted-foreground uppercase">
               الدروس ({lessons?.length ?? 0})
-            </h5>
-            <button
+            </h6>
+            <Button variant="ghost" size="sm" 
               onClick={() => setAddingLesson(true)}
               className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold"
             >
               <Plus className="h-3 w-3" />
               إضافة درس
-            </button>
+            </Button>
           </div>
 
           {addingLesson && (
@@ -454,33 +579,53 @@ function CourseRow({
                   key={lesson.id}
                   className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
                 >
-                  <Video className="h-4 w-4 text-primary flex-shrink-0" />
+                    {lesson.fileUrl ? (
+                      <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                    ) : (
+                      <Video className="h-4 w-4 text-primary flex-shrink-0" />
+                    )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
+                    <p className="font-medium text-foreground truncate">
                       {lesson.order}. {lesson.title}
                     </p>
                     {lesson.videoUrl && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {lesson.videoUrl}
-                      </p>
+                      <a
+                        href={lesson.videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                        className="text-muted-foreground truncate flex items-center gap-1 hover:underline"
+                      >
+                        <FileText className="h-3 w-3" />
+                        {lesson.videoUrl.split("/").pop() ?? lesson.videoUrl}
+                      </a>
+                    )}
+                    {lesson.fileUrl && (
+                      <a
+                        href={lesson.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                        className="text-muted-foreground truncate flex items-center gap-1 hover:underline"
+                      >
+                        <FileText className="h-3 w-3" />
+                        {lesson.fileUrl.split("/").pop() ?? lesson.fileUrl}
+                      </a>
                     )}
                   </div>
                   <div className="flex items-center gap-1">
-                    <button
+                      <Button variant="ghost" size="sm"
                       onClick={() => setEditingLesson(lesson.id)}
                       className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                     >
                       <Edit2 className="h-3 w-3" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm("حذف الدرس؟"))
-                          deleteLessonMutation.mutate({ id: lesson.id });
-                      }}
+                    </Button>
+                    <Button variant="ghost" size="sm" 
+                      onClick={() => deleteLessonMutation.mutate({ id: lesson.id })}
                       className="p-1 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
                     >
                       <Trash2 className="h-3 w-3" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )
@@ -511,10 +656,10 @@ export default function AdminCourses() {
     <PortalLayout role="admin" title="إدارة الدورات">
       <div className="space-y-5">
         <div className="flex items-center justify-between animate-in fade-in slide-in-from-bottom-4">
-          <p className="text-xs leading-6 md:text-sm text-muted-foreground">
+          <h6 className="text-muted-foreground">
             {courses?.length ?? 0} دورة
-          </p>
-          <Button
+          </h6>
+          <Button variant="ghost" 
             onClick={() => setShowForm(!showForm)}
             className="gap-2 font-bold"
           >
@@ -542,9 +687,9 @@ export default function AdminCourses() {
           <div className="flex flex-col items-center text-center py-16">
             <BookOpen className="h-12 w-12 text-muted-foreground/40 mb-4" />
             <h3 className="text-foreground mb-2">لا توجد دورات</h3>
-            <p className="text-xs leading-6 md:text-sm text-muted-foreground">
+            <h6 className="text-muted-foreground">
               ابدأ بإضافة أول دورة تدريبية
-            </p>
+            </h6>
           </div>
         ) : (
           <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4">

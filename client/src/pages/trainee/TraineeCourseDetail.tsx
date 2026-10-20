@@ -16,7 +16,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Download,
   Eye,
+  FileText,
   Lock,
   Play,
   PlayCircle,
@@ -29,6 +31,15 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
+
+// ===== أنواع YouTube IFrame API (تُحقن عبر السكريبت externe) =====
+declare global {
+  interface Window {
+    YT?: any;
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
 
 // ===== استخراج معرف Bunny =====
 // الصيغة: bunny:libraryId:videoId
@@ -45,14 +56,14 @@ function BunnyVideoPlayer({
   videoId,
   lessonId,
   courseId,
-  userIdentifier,
+  userId,
   onCompleted,
   initialWatched,
 }: {
   videoId: string;
   lessonId: number;
   courseId: number;
-  userIdentifier: string;
+  userId: number;
   onCompleted: () => void;
   initialWatched: number;
 }) {
@@ -96,7 +107,6 @@ function BunnyVideoPlayer({
     if (!isCompleted) {
       setIsCompleted(true);
       updateProgress.mutate({
-        userIdentifier,
         lessonId,
         courseId,
         watchedSeconds: 3600,
@@ -111,7 +121,7 @@ function BunnyVideoPlayer({
       <div className="aspect-video bg-black rounded-xl flex items-center justify-center">
         <div className="text-center">
           <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-white/60 text-sm">جاري تحميل بيانات الفيديو...</p>
+          <p className="text-white/60">جاري تحميل بيانات الفيديو...</p>
         </div>
       </div>
     );
@@ -122,7 +132,7 @@ function BunnyVideoPlayer({
       <div className="aspect-video bg-black rounded-xl flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
-          <p className="text-white/60 text-sm">
+          <p className="text-white/60">
             {error || "تعذّر تحميل الفيديو"}
           </p>
         </div>
@@ -133,9 +143,9 @@ function BunnyVideoPlayer({
   return (
     <div className="space-y-3">
       {/* بطاقة مشاهدة الفيديو من تسهيل */}
-      <div className="bg-gradient-to-br from-blue-950 to-gray-900 rounded-xl border border-blue-800/50 overflow-hidden shadow-xl">
+      <div className="overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-card to-background shadow-xl">
         {/* رأس البطاقة */}
-        <div className="bg-blue-900/40 px-5 py-3 flex items-center gap-3 border-b border-blue-800/40">
+        <div className="flex items-center gap-3 border-b border-border bg-primary/10 px-5 py-3">
           <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center flex-shrink-0">
             <svg
               className="w-4 h-4 text-primary-foreground"
@@ -146,12 +156,12 @@ function BunnyVideoPlayer({
             </svg>
           </div>
           <div>
-            <p className="text-white font-semibold text-sm">
+            <p className="text-white font-semibold">
               {videoInfo.title || "مقطع الدورة"}
             </p>
-            <p className="text-primary-foreground/70 text-xs">
+            <h6 className="text-primary-foreground/70">
               متوفر عبر منصة تسهيل
-            </p>
+            </h6>
           </div>
         </div>
 
@@ -171,7 +181,7 @@ function BunnyVideoPlayer({
                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <p className="text-primary-foreground/85 text-sm leading-relaxed">
+            <p className="text-primary-foreground/85">
               هذا الفيديو متاح عبر منصة <strong>تسهيل</strong> الخاصة بنيولاين.
               اضغط على الزر أدناه لمشاهدته ثم عد هنا وأكد المشاهدة.
             </p>
@@ -203,7 +213,7 @@ function BunnyVideoPlayer({
           </a>
 
           {!isCompleted && !confirmed ? (
-            <button
+            <Button variant="ghost" 
               onClick={handleConfirmWatched}
               className="flex items-center justify-center gap-2 w-full bg-success hover:bg-success/90 active:scale-[0.98] text-success-foreground font-semibold py-3 px-6 rounded-md transition-all duration-150 border border-success/30"
             >
@@ -221,7 +231,7 @@ function BunnyVideoPlayer({
                 />
               </svg>
               أكملت مشاهدة الفيديو — انتقل للاختبار
-            </button>
+            </Button>
           ) : (
             <div className="flex items-center justify-center gap-2 w-full bg-success/10 text-success-emphasis font-semibold py-3 px-6 rounded-md border border-success/30">
               <svg
@@ -246,13 +256,13 @@ function BunnyVideoPlayer({
       {/* شريط التقدم */}
       <div className="card p-4">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Eye className="h-4 w-4" />
             <span>حالة المشاهدة</span>
           </div>
           <span
             className={cn(
-              "text-sm font-bold",
+              "font-bold",
               isCompleted || confirmed
                 ? "text-success-emphasis"
                 : "text-warning-emphasis"
@@ -285,10 +295,10 @@ function getYouTubeId(url: string): string | null {
 
 // ===== نافذة تسجيل بيانات المتدرب =====
 function TraineeRegistrationModal({
-  userIdentifier,
+  userId,
   onComplete,
 }: {
-  userIdentifier: string;
+  userId: number;
   onComplete: (profile: { fullName: string; employeeId: string }) => void;
 }) {
   const [fullName, setFullName] = useState("");
@@ -298,7 +308,7 @@ function TraineeRegistrationModal({
     employeeId?: string;
   }>({});
 
-  const upsertMutation = trpc.traineeProfile.upsert.useMutation({
+  const upsertMutation = trpc.users.updateProfile.useMutation({
     onSuccess: () => {
       onComplete({ fullName, employeeId });
     },
@@ -323,7 +333,6 @@ function TraineeRegistrationModal({
       return;
     }
     upsertMutation.mutate({
-      userIdentifier,
       fullName: fullName.trim(),
       employeeId: employeeId.trim(),
     });
@@ -337,10 +346,10 @@ function TraineeRegistrationModal({
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <User className="h-8 w-8 text-primary" />
           </div>
-          <h2 className="text-xl font-bold text-foreground mb-1">
+          <h2 className="text-foreground mb-1">
             تسجيل بيانات المتدرب
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground">
             يرجى تعبئة البيانات التالية قبل بدء المشاهدة — ستُستخدم في شهادة
             الإتمام
           </p>
@@ -368,13 +377,12 @@ function TraineeRegistrationModal({
                 errors.fullName &&
                   "border-destructive focus-visible:ring-destructive"
               )}
-              dir="rtl"
             />
             {errors.fullName && (
-              <p className="text-xs text-destructive flex items-center gap-1">
+              <h6 className="text-destructive flex items-center gap-1">
                 <AlertCircle className="h-3 w-3" />
                 {errors.fullName}
-              </p>
+              </h6>
             )}
           </div>
 
@@ -399,27 +407,27 @@ function TraineeRegistrationModal({
                 errors.employeeId &&
                   "border-destructive focus-visible:ring-destructive"
               )}
-              dir="rtl"
             />
             {errors.employeeId && (
-              <p className="text-xs text-destructive flex items-center gap-1">
+              <h6 className="text-destructive flex items-center gap-1">
                 <AlertCircle className="h-3 w-3" />
                 {errors.employeeId}
-              </p>
+              </h6>
             )}
           </div>
 
           {/* تنبيه */}
           <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 flex gap-2">
             <Shield className="h-4 w-4 text-warning-emphasis flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-warning-emphasis leading-relaxed">
+            <h6 className="text-warning-emphasis">
               لن يُحتسب إنجاز الدورة إلا بعد مشاهدة الفيديو كاملاً. لا يُسمح
               بالتسريع أو التخطي.
-            </p>
+            </h6>
           </div>
 
           <Button
             type="submit"
+            variant="default"
             disabled={upsertMutation.isPending}
             className="w-full font-bold text-base h-12"
           >
@@ -436,16 +444,18 @@ function StrictYouTubePlayer({
   videoId,
   lessonId,
   courseId,
-  userIdentifier,
+  userId,
   onCompleted,
   initialWatched,
+  duration: lessonDuration = 0,
 }: {
   videoId: string;
   lessonId: number;
   courseId: number;
-  userIdentifier: string;
+  userId: number;
   onCompleted: () => void;
   initialWatched: number;
+  duration?: number;
 }) {
   const [watchPercent, setWatchPercent] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -459,15 +469,39 @@ function StrictYouTubePlayer({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const completedRef = useRef(false);
+  const apiReadyRef = useRef(false);
+  const playerCreatedRef = useRef(false);
   const updateMutation = trpc.lessonWatch.updateProgress.useMutation();
 
-  // حفظ التقدم كل 5 ثوانٍ
+  // تحديد المدة من بيانات الدرس إذا لم يوفرها مشغل يوتيوب بعد
+  useEffect(() => {
+    if (lessonDuration && lessonDuration > 0 && totalDuration === 0) {
+      setTotalDuration(lessonDuration);
+    }
+  }, [lessonDuration, totalDuration]);
+
+  // تحميل سكريبت YouTube IFrame API مرة واحدة
+  useEffect(() => {
+    if (apiReadyRef.current) return;
+    if (window.YT && window.YT.Player) {
+      apiReadyRef.current = true;
+      return;
+    }
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName("script")[0];
+    firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+    window.onYouTubeIframeAPIReady = () => {
+      apiReadyRef.current = true;
+    };
+  }, []);
+
+  // حفظ التقدم عند الخادم
   const saveProgress = useCallback(
     (watched: number, total: number) => {
       if (total <= 0) return;
       updateMutation.mutate(
         {
-          userIdentifier,
           lessonId,
           courseId,
           watchedSeconds: Math.round(watched),
@@ -484,10 +518,10 @@ function StrictYouTubePlayer({
         }
       );
     },
-    [userIdentifier, lessonId, courseId, onCompleted]
+    [lessonId, courseId, onCompleted, updateMutation]
   );
 
-  // استخدام YouTube IFrame API عبر postMessage
+  // مستمع postMessage كبديل لمراقبة.currentTime (قد لا تُرسل من يوتيوب أحيانًا)
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (!event.data || typeof event.data !== "string") return;
@@ -497,13 +531,11 @@ function StrictYouTubePlayer({
           const { currentTime, duration, playerState, playbackRate } =
             data.info;
 
-          // منع التسريع: إذا كانت السرعة > 1
           if (playbackRate && playbackRate > 1 && !warningShown) {
             setWarningShown(true);
             toast.error("⚠️ لا يُسمح بتسريع الفيديو — لن يُحتسب الإنجاز", {
               duration: 4000,
             });
-            // إعادة تعيين التقدم المحسوب
             watchedSecondsRef.current = 0;
             setWatchPercent(0);
           }
@@ -511,11 +543,9 @@ function StrictYouTubePlayer({
           if (duration && duration > 0) {
             setTotalDuration(duration);
 
-            // منع التخطي: إذا قفز المستخدم أكثر من 3 ثوانٍ للأمام
             if (currentTime && lastPositionRef.current > 0) {
               const jump = currentTime - lastPositionRef.current;
               if (jump > 5) {
-                // تخطي — لا نحتسب هذا الوقت
                 toast.warning("⚠️ تخطي الفيديو لا يُحتسب في الإنجاز", {
                   duration: 3000,
                 });
@@ -524,7 +554,6 @@ function StrictYouTubePlayer({
                 jump <= 5 &&
                 (!playbackRate || playbackRate <= 1)
               ) {
-                // مشاهدة طبيعية
                 watchedSecondsRef.current = Math.min(
                   watchedSecondsRef.current + jump,
                   duration
@@ -550,15 +579,86 @@ function StrictYouTubePlayer({
     return () => window.removeEventListener("message", handleMessage);
   }, [warningShown]);
 
-  // حفظ دوري كل 5 ثوانٍ
+  // إنشاء مشغل يوتيوب الحقيقي باستخدام IFrame API لكشف نهاية الفيديو (ENDED)
+  useEffect(() => {
+    if (!window.YT || !window.YT.Player) return;
+    if (playerCreatedRef.current) return;
+
+    const player = new window.YT.Player(iframeRef.current!, {
+      videoId,
+      events: {
+        onReady: () => {
+          try {
+            const dur = player.getDuration();
+            if (dur && dur > 0) {
+              setTotalDuration(dur);
+            }
+          } catch {}
+        },
+        onStateChange: (event: any) => {
+          // YT.PlayerState.ENDED = 0
+          if (event.data === 0 && !completedRef.current) {
+            const total =
+              totalDuration > 0
+                ? totalDuration
+                : lessonDuration > 0
+                  ? lessonDuration
+                  : 0;
+            if (total > 0) {
+              watchedSecondsRef.current = total;
+              saveProgress(total, total);
+              setWatchPercent(100);
+              setIsCompleted(true);
+              completedRef.current = true;
+              onCompleted();
+            }
+          }
+        },
+        onError: () => {},
+      },
+    });
+    playerRef.current = player;
+    playerCreatedRef.current = true;
+  }, [window.YT, videoId, iframeRef.current, totalDuration, lessonDuration, saveProgress, onCompleted]);
+
+  // حفظ دوري كل 5 ثوانٍ باستخدام getCurrentTime من مشغل يوتيوب
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      if (totalDuration > 0) {
-        saveProgress(watchedSecondsRef.current, totalDuration);
-      }
+      if (!totalDuration || totalDuration <= 0) return;
+      let current = watchedSecondsRef.current;
+      try {
+        if (playerRef.current && typeof playerRef.current.getCurrentTime === "function") {
+          const ct = playerRef.current.getCurrentTime();
+          if (ct && ct >= 0) {
+            current = Math.max(watchedSecondsRef.current, Math.floor(ct));
+          }
+        }
+      } catch {}
+      saveProgress(current, totalDuration);
+      watchedSecondsRef.current = Math.min(current, totalDuration);
+      setWatchPercent(Math.min(100, Math.round((watchedSecondsRef.current / totalDuration) * 100)));
     }, 5000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [totalDuration, saveProgress]);
+
+  // حفظ التقدم عند مغادرة الصفحة أو إخفاء التبويب
+  useEffect(() => {
+    const flush = () => {
+      if (totalDuration > 0 && watchedSecondsRef.current > 0 && !completedRef.current) {
+        saveProgress(watchedSecondsRef.current, totalDuration);
+      }
+    };
+    const handleBeforeUnload = () => flush();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [totalDuration, saveProgress]);
 
@@ -588,7 +688,7 @@ function StrictYouTubePlayer({
 
       {/* مؤشر التقدم */}
       <div className="card p-4 space-y-2">
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Eye className="h-4 w-4" />
             <span>نسبة المشاهدة</span>
@@ -606,15 +706,15 @@ function StrictYouTubePlayer({
         </div>
         <Progress value={watchPercent} className="h-3" />
         {!isCompleted && watchPercent < 95 && (
-          <p className="text-xs text-muted-foreground text-center">
+          <h6 className="text-muted-foreground text-center">
             يجب مشاهدة الفيديو كاملاً للحصول على الاعتماد — لا يُسمح بالتسريع أو
             التخطي
-          </p>
+          </h6>
         )}
         {!isCompleted && watchPercent >= 95 && (
-          <p className="text-xs text-warning-emphasis text-center font-medium">
+          <h6 className="text-warning-emphasis text-center">
             اقتربت من الإكمال... استمر في المشاهدة
-          </p>
+          </h6>
         )}
       </div>
     </div>
@@ -666,24 +766,24 @@ function ZoomPlayer({
           </svg>
         </div>
         <div>
-          <p className="text-white font-bold text-xl leading-tight">
+          <h2 className="text-white">
             {lesson.title}
-          </p>
-          <p className="text-white/75 text-sm">تسجيل Zoom مباشر</p>
+          </h2>
+          <p className="text-white/75">تسجيل Zoom مباشر</p>
         </div>
       </div>
 
       {/* بطاقة كلمة المرور */}
       {passcode ? (
         <div className="bg-white/15 border border-white/30 rounded-xl px-6 py-4 w-full max-w-xs text-center">
-          <p className="text-white/75 text-xs font-medium mb-2 uppercase tracking-wider">
+          <h6 className="text-white/75 mb-2 uppercase">
             كلمة المرور للتسجيل
-          </p>
+          </h6>
           <div className="flex items-center justify-center gap-3">
-            <span className="text-white font-mono font-bold text-2xl tracking-widest select-all">
+            <h2 className="text-white font-mono select-all">
               {passcode}
-            </span>
-            <button
+            </h2>
+            <Button variant="ghost" 
               onClick={handleCopy}
               className="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-white"
               title="نسخ كلمة المرور"
@@ -693,14 +793,14 @@ function ZoomPlayer({
               ) : (
                 <Eye className="w-5 h-5" />
               )}
-            </button>
+            </Button>
           </div>
-          <p className="text-white/70 text-xs mt-2">
+          <h6 className="text-white/70 mt-2">
             {copied ? "✔ تم النسخ!" : "انقر الأيقونة لنسخ كلمة المرور"}
-          </p>
+          </h6>
         </div>
       ) : (
-        <div className="bg-white/10 border border-white/20 rounded-xl px-6 py-3 text-white/80 text-sm">
+        <div className="bg-white/10 border border-white/20 rounded-xl px-6 py-3 text-white/80">
           لا توجد كلمة مرور لهذا التسجيل
         </div>
       )}
@@ -716,9 +816,9 @@ function ZoomPlayer({
         <Play className="w-6 h-6 fill-primary" />
         فتح التسجيل
       </a>
-      <p className="text-white/70 text-xs">
+      <h6 className="text-white/70">
         سيتم فتح التسجيل في نافذة جديدة — ادخل كلمة المرور عند الطلب
-      </p>
+      </h6>
     </div>
   );
 }
@@ -726,7 +826,7 @@ function ZoomPlayer({
 // ===== مشغل الفيديو العام =====
 function VideoPlayer({
   lesson,
-  userIdentifier,
+  userId,
   onCompleted,
   initialWatched,
 }: {
@@ -735,19 +835,73 @@ function VideoPlayer({
     courseId: number;
     videoUrl?: string | null;
     videoType?: string | null;
+    fileUrl?: string | null;
+    fileType?: string | null;
+    duration?: number | null;
     title: string;
     description?: string | null;
   };
-  userIdentifier: string;
+  userId: number;
   onCompleted: () => void;
   initialWatched: number;
 }) {
+  if (lesson.fileUrl) {
+    const isPdf = lesson.fileType?.toLowerCase() === "pdf" || /\.pdf(?:$|[?#])/i.test(lesson.fileUrl);
+    if (isPdf) {
+      return (
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+          <div className="flex items-center justify-between gap-3 border-b border-border bg-muted px-4 py-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <FileText className="size-5 shrink-0 text-primary" />
+              <span className="truncate font-semibold text-foreground">{lesson.title}</span>
+            </div>
+            <a
+              href={lesson.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+              className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:bg-primary/90"
+            >
+              تحميل PDF
+            </a>
+          </div>
+          <iframe
+            src={`${lesson.fileUrl}#toolbar=1&navpanes=0&scrollbar=1`}
+            title={lesson.title}
+            className="h-[min(700px,75vh)] min-h-[420px] w-full bg-white"
+          />
+          <div className="border-t border-border p-3 text-center">
+            <Button type="button" onClick={onCompleted} className="font-bold">
+              تم الاطلاع على الملف
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex aspect-video flex-col items-center justify-center gap-4 rounded-xl bg-muted p-6 text-center shadow-xl">
+        <FileText className="size-12 text-muted-foreground/60" />
+        <a
+          href={lesson.fileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          download
+          onClick={onCompleted}
+          className="rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground shadow-lg hover:bg-primary/90"
+        >
+          تحميل/فتح الملف
+        </a>
+      </div>
+    );
+  }
+
   if (!lesson.videoUrl) {
     return (
       <div className="aspect-video bg-muted rounded-xl flex items-center justify-center">
         <div className="text-center">
           <Play className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground">
             لا يوجد فيديو لهذا الدرس
           </p>
         </div>
@@ -763,7 +917,7 @@ function VideoPlayer({
         videoId={bunnyInfo.videoId}
         lessonId={lesson.id}
         courseId={lesson.courseId}
-        userIdentifier={userIdentifier}
+        userId={userId}
         onCompleted={onCompleted}
         initialWatched={initialWatched}
       />
@@ -789,18 +943,74 @@ function VideoPlayer({
           videoId={videoId}
           lessonId={lesson.id}
           courseId={lesson.courseId}
-          userIdentifier={userIdentifier}
+          userId={userId}
           onCompleted={onCompleted}
           initialWatched={initialWatched}
+          duration={lesson.duration ?? undefined}
         />
       );
     }
   }
 
+  const isFileLink =
+    lesson.videoType === "direct" ||
+    lesson.videoUrl.match(/\.(pdf|pptx?|docx?|xlsx?|zip|rar)$/i);
+
+  if (isFileLink) {
+    const isPdf = /\.pdf(?:$|[?#])/i.test(lesson.videoUrl);
+    if (isPdf) {
+      return (
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+          <div className="flex items-center justify-between gap-3 border-b border-border bg-muted px-4 py-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <FileText className="size-5 shrink-0 text-primary" />
+              <span className="truncate font-semibold text-foreground">
+                {lesson.title}
+              </span>
+            </div>
+            <a
+              href={lesson.videoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+              className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              تحميل PDF
+            </a>
+          </div>
+          <iframe
+            src={`${lesson.videoUrl}#toolbar=1&navpanes=0&scrollbar=1`}
+            title={lesson.title}
+            className="h-[min(700px,75vh)] min-h-[420px] w-full bg-white"
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="aspect-video rounded-xl overflow-hidden shadow-xl bg-muted flex flex-col items-center justify-center gap-4 p-6">
+        <FileText className="h-12 w-12 text-muted-foreground/60" />
+        <a
+          href={lesson.videoUrl ?? undefined}
+          target="_blank"
+          rel="noopener noreferrer"
+          download
+          className="flex items-center gap-2 bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl hover:bg-primary/90 transition-all shadow-lg"
+        >
+          <Download className="h-5 w-5" />
+          تحميل/فتح الملف
+        </a>
+        <h6 className="text-muted-foreground text-center break-all truncate">
+          {(lesson.videoUrl ?? "").split("/").pop() ?? lesson.videoUrl}
+        </h6>
+      </div>
+    );
+  }
+
   return (
     <div className="aspect-video rounded-xl overflow-hidden shadow-xl bg-black">
       <video
-        src={lesson.videoUrl}
+        src={lesson.videoUrl ?? undefined}
         controls
         className="w-full h-full"
         title={lesson.title}
@@ -815,10 +1025,6 @@ export default function TraineeCourseDetail() {
   const courseId = parseInt(params.id);
   const [, setLocation] = useLocation();
   const [activeLesson, setActiveLesson] = useState<number>(0);
-  const [traineeProfile, setTraineeProfile] = useState<{
-    fullName: string;
-    employeeId: string;
-  } | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
   const [completedLessonIds, setCompletedLessonIds] = useState<Set<number>>(
     new Set()
@@ -840,45 +1046,34 @@ export default function TraineeCourseDetail() {
   } | null>(null);
   const [certCode, setCertCode] = useState<string | null>(null);
 
-  // معرّف المستخدم (من localStorage)
-  const userIdentifier = (() => {
-    let id = localStorage.getItem("userIdentifier");
-    if (!id) {
-      id = `user_${Math.random().toString(36).substr(2, 12)}`;
-      localStorage.setItem("userIdentifier", id);
-    }
-    return id;
-  })();
+  const { user } = useAuth({ redirectOnUnauthenticated: true, redirectPath: "/login" });
+  const userId = user?.id ?? 0;
 
   const { data: course, isLoading: courseLoading } = trpc.courses.byId.useQuery(
     { id: courseId }
   );
   const { data: lessons, isLoading: lessonsLoading } =
     trpc.lessons.byCourse.useQuery({ courseId });
-  const { data: existingProfile } = trpc.traineeProfile.get.useQuery({
-    userIdentifier,
-  });
   const { data: courseWatchProgress } =
-    trpc.lessonWatch.getCourseProgress.useQuery({ userIdentifier, courseId });
+    trpc.lessonWatch.getCourseProgress.useQuery({ courseId }, { enabled: Boolean(user) });
   const { data: existingExam } = trpc.courseExam.getByCourse.useQuery({
     courseId,
   });
   const { data: existingAttempt } = trpc.courseExam.getAttempt.useQuery({
     courseId,
-    userIdentifier,
-  });
+  }, { enabled: Boolean(user) });
   const { data: existingCert } = trpc.courseCert.get.useQuery({
     courseId,
-    userIdentifier,
-  });
+  }, { enabled: Boolean(user) });
   const { data: existingRating } = trpc.courseRating.getForCourse.useQuery({
     courseId,
-    userIdentifier,
-  });
+  }, { enabled: Boolean(user) });
 
   const submitRatingMutation = trpc.courseRating.submit.useMutation();
   const submitExamMutation = trpc.courseExam.submit.useMutation();
   const issueCertMutation = trpc.courseCert.issue.useMutation();
+  const markLessonCompleteMutation =
+    trpc.lessonWatch.markLessonComplete.useMutation();
 
   const utils = trpc.useUtils();
 
@@ -893,17 +1088,17 @@ export default function TraineeCourseDetail() {
     }
   }, [courseWatchProgress]);
 
-  // تحقق من وجود بيانات المتدرب
+  // فتح مرحلة الشهادة مباشرة عبر ?phase=certificate (من صفحة شهاداتي)
   useEffect(() => {
-    if (existingProfile) {
-      setTraineeProfile({
-        fullName: existingProfile.fullName,
-        employeeId: existingProfile.employeeId,
-      });
-    } else if (existingProfile === null) {
-      setShowRegistration(true);
+    if (new URLSearchParams(window.location.search).get("phase") !== "certificate")
+      return;
+    if (existingCert) {
+      setCertCode(existingCert.certCode);
+      setCoursePhase("certificate");
+    } else if (existingAttempt?.isPassed) {
+      setCoursePhase("certificate");
     }
-  }, [existingProfile]);
+  }, [existingCert, existingAttempt]);
 
   const currentLesson = lessons?.[activeLesson];
   const totalLessons = lessons?.length ?? 0;
@@ -920,11 +1115,18 @@ export default function TraineeCourseDetail() {
       next.add(currentLesson.id);
       return next;
     });
+    // دروس الملفات (PDF / Word / ZIP) لا تمر على مشغّل الفيديو،
+    // لذا نثبّت إتمامها في قاعدة البيانات صراحةً.
+    if (currentLesson.fileUrl) {
+      markLessonCompleteMutation.mutate({
+        lessonId: currentLesson.id,
+        courseId,
+      });
+    }
     utils.lessonWatch.getCourseProgress.invalidate({
-      userIdentifier,
       courseId,
     });
-    recalcMutation.mutate({ userIdentifier, courseId });
+    recalcMutation.mutate({ courseId });
     toast.success("🎉 أحسنت! تم إكمال هذا الدرس بنجاح");
     if (activeLesson < totalLessons - 1) {
       setTimeout(() => setActiveLesson(prev => prev + 1), 2000);
@@ -933,10 +1135,10 @@ export default function TraineeCourseDetail() {
     currentLesson,
     activeLesson,
     totalLessons,
-    userIdentifier,
     courseId,
     utils,
     recalcMutation,
+    markLessonCompleteMutation,
   ]);
 
   // عند إكمال جميع الدروس → انتقل لمرحلة التقييم
@@ -973,7 +1175,6 @@ export default function TraineeCourseDetail() {
     }
     await submitRatingMutation.mutateAsync({
       courseId,
-      userIdentifier,
       q1: ratingAnswers[1],
       q2: ratingAnswers[2],
       q3: ratingAnswers[3],
@@ -1002,7 +1203,6 @@ export default function TraineeCourseDetail() {
     );
     const result = await submitExamMutation.mutateAsync({
       courseId,
-      userIdentifier,
       answers: answersArr,
     });
     setExamResult(result);
@@ -1017,12 +1217,9 @@ export default function TraineeCourseDetail() {
   };
 
   const handleIssueCert = async (score: number) => {
-    if (!traineeProfile || !course) return;
+    if (!course) return;
     const res = await issueCertMutation.mutateAsync({
       courseId,
-      userIdentifier,
-      fullName: traineeProfile.fullName,
-      employeeId: traineeProfile.employeeId,
       courseName: course.title,
       departmentName: course.departmentId
         ? `إدارة ${course.departmentId}`
@@ -1042,7 +1239,6 @@ export default function TraineeCourseDetail() {
     fullName: string;
     employeeId: string;
   }) => {
-    setTraineeProfile(profile);
     setShowRegistration(false);
   };
 
@@ -1084,7 +1280,7 @@ export default function TraineeCourseDetail() {
                   </p>
                   <div className="flex gap-2 justify-center">
                     {[1, 2, 3, 4, 5].map(star => (
-                      <button
+                      <Button variant="ghost" 
                         key={star}
                         onClick={() =>
                           setRatingAnswers(prev => ({ ...prev, [q.id]: star }))
@@ -1099,10 +1295,10 @@ export default function TraineeCourseDetail() {
                         )}
                       >
                         {star}
-                      </button>
+                      </Button>
                     ))}
                   </div>
-                  <div className="flex justify-between text-xs text-muted-foreground px-1">
+                  <div className="flex justify-between text-muted-foreground px-1">
                     <span>ضعيف</span>
                     <span>ممتاز</span>
                   </div>
@@ -1120,6 +1316,7 @@ export default function TraineeCourseDetail() {
               </div>
             </div>
             <Button
+              variant="default"
               onClick={handleSubmitRating}
               disabled={
                 Object.keys(ratingAnswers).length < 5 ||
@@ -1153,9 +1350,9 @@ export default function TraineeCourseDetail() {
                   <h2 className="text-success-emphasis">
                     مبروك! اجتزت الاختبار
                   </h2>
-                  <p className="text-2xl font-bold tracking-tight md:text-3xl text-primary">
+                  <h2 className="text-primary">
                     {examResult.score}/100
-                  </p>
+                  </h2>
                   <p className="text-muted-foreground">
                     أجبت عن {examResult.correct} من {examResult.total} أسئلة
                     بشكل صحيح
@@ -1174,11 +1371,11 @@ export default function TraineeCourseDetail() {
                     <XCircle className="h-10 w-10 text-destructive" />
                   </div>
                   <h2 className="text-destructive">لم تجتز الاختبار</h2>
-                  <p className="text-2xl font-bold tracking-tight md:text-3xl text-muted-foreground">
+                  <h2 className="text-muted-foreground">
                     {examResult.score}/100
-                  </p>
+                  </h2>
                   <p className="text-muted-foreground">درجة النجاح: 70/100</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground">
                     أجبت عن {examResult.correct} من {examResult.total} أسئلة
                     بشكل صحيح
                   </p>
@@ -1219,30 +1416,32 @@ export default function TraineeCourseDetail() {
                   {questions.map((q: any, qi: number) => (
                     <div
                       key={q.id}
-                      className="border border-border rounded-xl p-5 space-y-3"
+                      className="border border-border rounded-xl p-4 md:p-5 space-y-3"
                     >
-                      <p className="font-semibold text-foreground">
+                      <p className="font-semibold text-foreground text-right">
                         سؤال {qi + 1}: {q.question}
                       </p>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {q.options.map((opt: string, oi: number) => (
-                          <button
+                          <Button variant="ghost"
                             key={oi}
                             onClick={() =>
                               setExamAnswers(prev => ({ ...prev, [qi]: oi }))
                             }
                             className={cn(
-                              "w-full text-start p-3 rounded-lg border transition-all text-sm",
+                              "w-full flex flex-col items-start gap-1.5 p-3.5 rounded-lg border transition-all text-sm text-right whitespace-normal min-w-0 min-h-[72px] md:min-h-auto",
                               examAnswers[qi] === oi
                                 ? "bg-primary/10 border-primary text-primary font-medium"
                                 : "border-border hover:bg-muted/50 text-foreground"
                             )}
                           >
-                            <span className="font-bold me-2">
+                            <span className="text-right break-words whitespace-normal leading-relaxed">
+                              {opt}
+                            </span>
+                            <span className="font-bold text-right text-xs opacity-70 mt-1">
                               {String.fromCharCode(65 + oi)}.
-                            </span>{" "}
-                            {opt}
-                          </button>
+                            </span>
+                          </Button>
                         ))}
                       </div>
                     </div>
@@ -1269,7 +1468,7 @@ export default function TraineeCourseDetail() {
   }
 
   // ===== شاشة الشهادة =====
-  if (coursePhase === "certificate" && traineeProfile && course) {
+  if (coursePhase === "certificate" && course) {
     const issueDate = new Date().toLocaleDateString("ar-SA", {
       year: "numeric",
       month: "long",
@@ -1288,7 +1487,7 @@ export default function TraineeCourseDetail() {
               <ArrowRight className="h-4 w-4" />
               الدورات
             </Button>
-            <Button onClick={() => window.print()} className="gap-2">
+            <Button variant="ghost"  onClick={() => window.print()} className="gap-2">
               <Printer className="h-4 w-4" />
               طباعة الشهادة
             </Button>
@@ -1297,25 +1496,10 @@ export default function TraineeCourseDetail() {
           {/* الشهادة - تصميم محسّن */}
           <div
             id="course-certificate"
-            className="bg-white text-gray-900 shadow-2xl overflow-hidden"
-            style={{
-              minHeight: "600px",
-              direction: "rtl",
-              fontFamily: "'Cairo', 'Segoe UI', sans-serif",
-              border: "3px solid #C9A227",
-              position: "relative",
-            }}
+            className="cert-sheet text-gray-900 shadow-2xl overflow-hidden"
           >
             {/* إطار ذهبي داخلي */}
-            <div
-              style={{
-                position: "absolute",
-                inset: "8px",
-                border: "1px solid #C9A227",
-                opacity: 0.35,
-                pointerEvents: "none",
-              }}
-            />
+            <div className="cert-frame" />
 
             {/* الجزء العلوي الأبيض */}
             <div className="px-16 pt-10 pb-4 text-center">
@@ -1327,95 +1511,76 @@ export default function TraineeCourseDetail() {
                     alt="شعار نيولاين"
                     className="h-24 object-contain"
                     onError={e => {
-                      (e.target as HTMLImageElement).style.display = "none";
+                      e.currentTarget.hidden = true;
                     }}
                   />
                 </div>
               </div>
 
               {/* عنوان مزدوج عربي وإنجليزي */}
-              <h1
-                className="text-3xl font-extrabold tracking-wide mb-1"
-                style={{ color: "#1E3A6E" }}
-              >
+              <h1 className="cert-navy mb-1">
                 شهادة إتمام برنامج تدريبي
               </h1>
-              <p
-                className="text-base font-semibold uppercase tracking-widest mb-5"
-                style={{ color: "#C9A227" }}
-              >
+              <p className="cert-gold uppercase mb-5">
                 CERTIFICATE OF COMPLETION
               </p>
 
               {/* نص تقديمي */}
-              <p className="text-gray-600 text-base mb-2">
+              <p className="text-gray-600 mb-2">
                 تُقدِّم شركة نيولاين للخدمات اللوجستية هذه الشهادة إلى
               </p>
-              <p className="text-gray-500 text-sm mb-3">
+              <p className="text-gray-500 mb-3">
                 Newline Logistics Company proudly presents this certificate to
               </p>
 
               {/* اسم المتدرب */}
-              <div
-                className="text-5xl font-bold mb-3"
-                style={{
-                  fontFamily: "Georgia, 'Times New Roman', serif",
-                  color: "#1a1a2e",
-                }}
-              >
-                {traineeProfile.fullName}
+              <div className="cert-name mb-3">
+                {user.name || user.employeeNumber}
               </div>
-              <p className="text-gray-500 text-sm mb-4">
+              <p className="text-gray-500 mb-4">
                 الرقم الوظيفي / Employee ID:{" "}
                 <span className="font-bold text-gray-700">
-                  {traineeProfile.employeeId}
+                  {user.employeeNumber}
                 </span>
               </p>
 
               {/* اسم الدورة */}
-              <p className="text-gray-600 text-sm mb-1">
+              <p className="text-gray-600 mb-1">
                 لإتمامه بنجاح البرنامج التدريبي المعنون بـ:
               </p>
-              <p className="text-gray-500 text-xs mb-2">
+              <h6 className="text-gray-500 mb-2">
                 for successfully completing the training program entitled:
-              </p>
-              <p
-                className="font-bold text-xl mb-3"
-                style={{ color: "#1E3A6E" }}
-              >
+              </h6>
+              <h2 className="cert-navy mb-3">
                 "{course.title}"
-              </p>
+              </h2>
 
               {/* درجة الاختبار */}
               {(examResult || existingAttempt) && (
                 <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-5 py-1.5 mb-3">
-                  <span className="text-gray-600 text-sm">
+                  <span className="text-gray-600">
                     درجة الاختبار / Score:
                   </span>
-                  <span
-                    className="font-extrabold text-xl"
-                    style={{ color: "#1E3A6E" }}
+                  <h2
+                    className="cert-navy"
                   >
                     {examResult?.score ?? existingAttempt?.score ?? 0}/100
-                  </span>
+                  </h2>
                 </div>
               )}
 
-              <p className="text-gray-500 text-xs max-w-2xl mx-auto leading-relaxed mb-2 px-4">
+              <h6 className="text-gray-500 max-w-2xl mx-auto mb-2 px-4">
                 صُمِّم هذا البرنامج لتعزيز الكفاءات المهنية وتطوير المهارات
                 العملية، وتُمنح هذه الشهادة اعترافاً بالتزامه وحضوره ومشاركته
                 الفعّالة وإتمامه جميع متطلبات البرنامج.
-              </p>
-              <p className="font-bold text-base" style={{ color: "#C9A227" }}>
+              </h6>
+              <p className="cert-gold">
                 {issueDate}
               </p>
             </div>
 
             {/* الموجات الزرقاء والذهبية */}
-            <div
-              className="relative"
-              style={{ height: "170px", marginTop: "8px" }}
-            >
+            <div className="cert-waves relative">
               <svg
                 viewBox="0 0 1200 170"
                 xmlns="http://www.w3.org/2000/svg"
@@ -1561,7 +1726,7 @@ export default function TraineeCourseDetail() {
       <PortalLayout role="trainee" title="غير موجود">
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <p className="text-muted-foreground">الدورة غير موجودة</p>
-          <Button onClick={() => setLocation("/courses")} className="gap-2">
+          <Button variant="ghost"  onClick={() => setLocation("/courses")} className="gap-2">
             <ArrowRight className="h-4 w-4" />
             العودة للدورات
           </Button>
@@ -1575,7 +1740,7 @@ export default function TraineeCourseDetail() {
       {/* نافذة تسجيل المتدرب */}
       {showRegistration && (
         <TraineeRegistrationModal
-          userIdentifier={userIdentifier}
+          userId={userId}
           onComplete={handleRegistrationComplete}
         />
       )}
@@ -1595,28 +1760,28 @@ export default function TraineeCourseDetail() {
                 الدورات
               </Button>
               <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground truncate max-w-xs">
+              <span className="font-medium text-foreground truncate max-w-xs">
                 {course.title}
               </span>
             </div>
 
             {/* بيانات المتدرب */}
-            {traineeProfile && (
-              <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-1.5 text-xs">
+            {user && (
+              <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-1.5">
                 <User className="h-3.5 w-3.5 text-primary" />
                 <span className="font-medium text-foreground">
-                  {traineeProfile.fullName}
+                  {user.name || user.employeeNumber}
                 </span>
                 <span className="text-muted-foreground">|</span>
                 <span className="text-muted-foreground">
-                  {traineeProfile.employeeId}
+                  {user.employeeNumber}
                 </span>
-                <button
+                <Button variant="ghost" size="sm" 
                   onClick={() => setShowRegistration(true)}
                   className="text-primary hover:underline text-xs ms-1"
                 >
                   تعديل
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -1626,10 +1791,10 @@ export default function TraineeCourseDetail() {
             <div className="lg:col-span-2 space-y-5 animate-in fade-in slide-in-from-bottom-4">
               {/* مشغل الفيديو */}
               {currentLesson ? (
-                traineeProfile ? (
+                user.name && user.employeeNumber ? (
                   <VideoPlayer
                     lesson={{ ...currentLesson, courseId }}
-                    userIdentifier={userIdentifier}
+                    userId={userId}
                     onCompleted={handleLessonCompleted}
                     initialWatched={
                       courseWatchProgress?.find(
@@ -1677,17 +1842,17 @@ export default function TraineeCourseDetail() {
                           </Badge>
                         )}
                       </div>
-                      <h2 className="font-bold text-foreground text-lg mb-1">
+                      <h2 className="text-foreground mb-1">
                         {currentLesson.title}
                       </h2>
                       {currentLesson.description && (
-                        <p className="text-muted-foreground text-sm leading-relaxed">
+                        <p className="text-muted-foreground">
                           {currentLesson.description}
                         </p>
                       )}
                     </div>
                     {currentLesson.duration && (
-                      <div className="flex items-center gap-1.5 text-muted-foreground text-sm flex-shrink-0">
+                      <div className="flex items-center gap-1.5 text-muted-foreground flex-shrink-0">
                         <Clock className="h-4 w-4" />
                         <span>{formatDuration(currentLesson.duration)}</span>
                       </div>
@@ -1708,7 +1873,7 @@ export default function TraineeCourseDetail() {
                       <ChevronRight className="h-4 w-4" />
                       السابق
                     </Button>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground">
                       {activeLesson + 1} / {totalLessons}
                     </span>
                     <Button
@@ -1731,9 +1896,9 @@ export default function TraineeCourseDetail() {
 
               {/* معلومات الدورة */}
               <div className="card p-5">
-                <h3 className="font-bold text-foreground mb-3">عن الدورة</h3>
+                <h3 className="text-foreground mb-3">عن الدورة</h3>
                 {course.description && (
-                  <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+                  <p className="text-muted-foreground mb-4">
                     {course.description}
                   </p>
                 )}
@@ -1741,7 +1906,7 @@ export default function TraineeCourseDetail() {
                   {course.duration && (
                     <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
                       <Clock className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">
+                      <span className="font-medium">
                         {Math.floor(course.duration / 60)}س{" "}
                         {course.duration % 60}د
                       </span>
@@ -1749,7 +1914,7 @@ export default function TraineeCourseDetail() {
                   )}
                   <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
                     <Play className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">
+                    <span className="font-medium">
                       {totalLessons} درس
                     </span>
                   </div>
@@ -1760,38 +1925,43 @@ export default function TraineeCourseDetail() {
             {/* الشريط الجانبي */}
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
               {/* إجمالي التقدم */}
-              <div className="card p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-bold text-foreground text-sm">
+              <div className="card p-4 sm:p-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h5 className="text-foreground"> 
                     تقدمك في الدورة
-                  </h3>
-                  <span className="text-2xl font-bold text-primary">
+                  </h5>
+                  <strong className="text-2xl font-bold leading-none text-primary">
                     {overallProgress}%
-                  </span>
+                  </strong>
                 </div>
                 <Progress value={overallProgress} className="h-2 mb-2" />
-                <p className="text-xs text-muted-foreground text-center">
+                <p className="text-center text-sm text-muted-foreground">
                   {completedCount} من {totalLessons} درس مكتمل
                 </p>
                 {overallProgress === 100 && (
                   <div className="mt-3 p-3 bg-success/10 border border-success/30 rounded-lg text-center">
                     <Award className="h-6 w-6 text-success-emphasis mx-auto mb-1" />
-                    <p className="text-xs text-success-emphasis font-bold">
+                    <h6 className="text-success-emphasis">
                       أكملت الدورة! تحقق من المسار للحصول على شهادتك
-                    </p>
+                    </h6>
                   </div>
                 )}
               </div>
 
               {/* قائمة الدروس */}
               <div className="card overflow-hidden">
-                <div className="p-4 border-b border-border">
-                  <h3 className="font-bold text-foreground">محتوى الدورة</h3>
+                <div className="border-b border-border p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-foreground">محتوى الدورة</h3>
+                    <span className="text-xs text-muted-foreground">
+                      {totalLessons} دروس
+                    </span>
+                  </div>
                 </div>
-                <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
+                <div className="max-h-[420px] divide-y divide-border overflow-y-auto">
                   {lessons?.length === 0 ? (
                     <div className="p-6 text-center">
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-muted-foreground">
                         لم يتم إضافة دروس بعد
                       </p>
                     </div>
@@ -1801,14 +1971,15 @@ export default function TraineeCourseDetail() {
                       const isActive = index === activeLesson;
 
                       return (
-                        <button
+                        <Button
+                          variant="ghost"
                           key={lesson.id}
                           onClick={() => setActiveLesson(index)}
                           className={cn(
-                            "w-full text-start p-4 flex items-center gap-3 transition-all",
+                            "h-auto w-full justify-start rounded-none p-3.5 text-start transition-all sm:p-4",
                             isActive
-                              ? "bg-primary/10 border-s-2 border-primary"
-                              : "hover:bg-muted/50",
+                              ? "border-s-2 border-primary bg-primary/10"
+                              : "border-s-2 border-transparent hover:bg-muted/50",
                             "cursor-pointer"
                           )}
                         >
@@ -1822,21 +1993,21 @@ export default function TraineeCourseDetail() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p
-                              className={cn(
-                                "text-sm font-medium truncate",
+                              <p
+                                className={cn(
+                                "truncate text-sm font-semibold",
                                 isActive ? "text-primary" : "text-foreground"
                               )}
                             >
                               {lesson.title}
                             </p>
                             {lesson.duration && (
-                              <p className="text-xs text-muted-foreground mt-0.5">
+                              <span className="mt-0.5 block text-xs text-muted-foreground">
                                 {formatDuration(lesson.duration)}
-                              </p>
+                              </span>
                             )}
                           </div>
-                        </button>
+                        </Button>
                       );
                     })
                   )}
@@ -1844,28 +2015,30 @@ export default function TraineeCourseDetail() {
               </div>
 
               {/* تنبيه القواعد */}
-              <div className="bg-warning/10 border border-warning/30 rounded-xl p-4 space-y-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <Shield className="h-4 w-4 text-warning-emphasis" />
-                  <h4 className="text-sm font-bold text-warning-emphasis">
+              <div className="space-y-3 rounded-xl border border-warning/30 bg-warning/10 p-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-warning/15">
+                    <Shield className="size-4 text-warning-emphasis" />
+                  </div>
+                  <h5 className="text-warning-emphasis">
                     قواعد الاعتماد
-                  </h4>
+                  </h5>
                 </div>
-                <ul className="space-y-1.5 text-xs text-muted-foreground">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-warning-emphasis mt-0.5">•</span>
+                <ul className="space-y-2 text-xs leading-6 text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5 text-warning-emphasis">•</span>
                     يجب مشاهدة كل فيديو كاملاً
                   </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-warning-emphasis mt-0.5">•</span>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5 text-warning-emphasis">•</span>
                     لا يُسمح بتسريع الفيديو
                   </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-warning-emphasis mt-0.5">•</span>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5 text-warning-emphasis">•</span>
                     لا يُحتسب التخطي في الإنجاز
                   </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-warning-emphasis mt-0.5">•</span>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5 text-warning-emphasis">•</span>
                     الشهادة تُمنح عند إكمال المسار 100%
                   </li>
                 </ul>

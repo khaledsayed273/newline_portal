@@ -1,7 +1,8 @@
+import { Button } from "@/components/ui/button";
 import PortalLayout from "@/components/PortalLayout";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
-import { Briefcase, CheckCircle2, Download, ExternalLink } from "lucide-react";
+import { Briefcase, CheckCircle2, Download } from "lucide-react";
 import { useState } from "react";
 
 export default function TraineeJobDescriptions() {
@@ -16,7 +17,7 @@ export default function TraineeJobDescriptions() {
     <PortalLayout role="trainee" title="الأوصاف الوظيفية">
       <div className="space-y-6">
         <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-4">
-          <button
+          <Button variant="ghost" 
             onClick={() => setSelectedDept(undefined)}
             className={cn(
               "px-4 py-2 rounded-full text-sm font-semibold transition-all",
@@ -26,9 +27,9 @@ export default function TraineeJobDescriptions() {
             )}
           >
             الكل
-          </button>
+          </Button>
           {departments?.map(dept => (
-            <button
+            <Button variant="ghost" 
               key={dept.id}
               onClick={() => setSelectedDept(dept.id)}
               className={cn(
@@ -39,7 +40,7 @@ export default function TraineeJobDescriptions() {
               )}
             >
               {dept.name}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -55,7 +56,7 @@ export default function TraineeJobDescriptions() {
         ) : jobs?.length === 0 ? (
           <div className="flex flex-col items-center text-center py-16">
             <Briefcase className="h-12 w-12 text-muted-foreground/40 mb-4" />
-            <h3 className="text-base font-semibold md:text-lg text-foreground mb-2">
+            <h3 className="text-foreground mb-2">
               لا توجد مهام
             </h3>
           </div>
@@ -93,10 +94,10 @@ export default function TraineeJobDescriptions() {
                   {job.responsibilities &&
                     (job.responsibilities as string[]).length > 0 && (
                       <div>
-                        <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                        <h5 className="text-foreground mb-3 flex items-center gap-2">
                           <div className="w-1.5 h-4 bg-primary rounded-full" />
                           المسؤوليات والمهام
-                        </h4>
+                        </h5>
                         <ul className="space-y-2">
                           {(job.responsibilities as string[]).map((r, i) => (
                             <li
@@ -113,10 +114,10 @@ export default function TraineeJobDescriptions() {
                   {job.requirements &&
                     (job.requirements as string[]).length > 0 && (
                       <div>
-                        <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                        <h5 className="text-foreground mb-3 flex items-center gap-2">
                           <div className="w-1.5 h-4 bg-amber-500 rounded-full" />
                           المتطلبات
-                        </h4>
+                        </h5>
                         <ul className="space-y-2">
                           {(job.requirements as string[]).map((r, i) => (
                             <li

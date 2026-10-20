@@ -1,6 +1,14 @@
 import PortalLayout from "@/components/PortalLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { Send } from "lucide-react";
@@ -44,7 +52,7 @@ export default function AdminTrainingRequests() {
       <div className="space-y-5">
         <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-4">
           {["all", "pending", "approved", "rejected", "completed"].map(s => (
-            <button
+            <Button variant="ghost" size="sm" 
               key={s}
               onClick={() => setFilterStatus(s)}
               className={cn(
@@ -55,7 +63,7 @@ export default function AdminTrainingRequests() {
               )}
             >
               {s === "all" ? "الكل" : statusLabels[s]?.label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -79,36 +87,40 @@ export default function AdminTrainingRequests() {
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex-1">
                       <h4 className="text-foreground">{req.title}</h4>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <h6 className="text-muted-foreground mt-0.5">
                         المتدرب: {req.user?.name ?? "مجهول"} •{" "}
                         {new Date(req.createdAt).toLocaleDateString("ar-SA")}
-                      </p>
+                      </h6>
                     </div>
                     <Badge variant={status.variant} className="flex-shrink-0">
                       {status.label}
                     </Badge>
                   </div>
                   {req.description && (
-                    <p className="text-xs text-muted-foreground mb-3">
+                    <h6 className="text-muted-foreground mb-3">
                       {req.description}
-                    </p>
+                    </h6>
                   )}
 
                   {editingId === req.id ? (
                     <div className="space-y-3 mt-3 pt-3 border-t border-border">
-                      <select
-                        value={newStatus}
-                        onChange={e => setNewStatus(e.target.value)}
-                        className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      <Select
+                        value={newStatus || "__none__"}
+                        onValueChange={v => setNewStatus(v === "__none__" ? "" : v)}
                       >
-                        <option value="">-- اختر الحالة --</option>
-                        {Object.entries(statusLabels).map(([v, l]) => (
-                          <option key={v} value={v}>
-                            {l.label}
-                          </option>
-                        ))}
-                      </select>
-                      <textarea
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="-- اختر الحالة --" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">-- اختر الحالة --</SelectItem>
+                          {Object.entries(statusLabels).map(([v, l]) => (
+                            <SelectItem key={v} value={v}>
+                              {l.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Textarea
                         value={adminNotes}
                         onChange={e => setAdminNotes(e.target.value)}
                         rows={2}
@@ -117,6 +129,8 @@ export default function AdminTrainingRequests() {
                       />
                       <div className="flex gap-2">
                         <Button
+                          type="submit"
+                          variant="default"
                           size="sm"
                           onClick={() =>
                             updateMutation.mutate({
@@ -140,7 +154,7 @@ export default function AdminTrainingRequests() {
                       </div>
                     </div>
                   ) : (
-                    <button
+                    <Button variant="ghost" size="sm" 
                       onClick={() => {
                         setEditingId(req.id);
                         setNewStatus(req.status ?? "pending");
@@ -149,7 +163,7 @@ export default function AdminTrainingRequests() {
                       className="text-xs text-primary hover:underline font-semibold"
                     >
                       تحديث الحالة
-                    </button>
+                    </Button>
                   )}
                 </div>
               );

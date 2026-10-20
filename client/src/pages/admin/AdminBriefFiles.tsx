@@ -1,7 +1,16 @@
 import PortalLayout from "@/components/PortalLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Edit2, FileText, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -45,7 +54,7 @@ function BriefFileForm({
           <label className="text-sm font-semibold text-foreground mb-1.5 block">
             اسم الملف *
           </label>
-          <input
+          <Input
             value={title}
             onChange={e => setTitle(e.target.value)}
             required
@@ -57,7 +66,7 @@ function BriefFileForm({
           <label className="text-sm font-semibold text-foreground mb-1.5 block">
             الوصف
           </label>
-          <textarea
+          <Textarea
             value={description}
             onChange={e => setDescription(e.target.value)}
             rows={2}
@@ -68,40 +77,48 @@ function BriefFileForm({
           <label className="text-sm font-semibold text-foreground mb-1.5 block">
             الإدارة
           </label>
-          <select
-            value={departmentId}
-            onChange={e => setDepartmentId(e.target.value)}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          <Select
+            value={departmentId ? String(departmentId) : "__all__"}
+            onValueChange={v => setDepartmentId(v === "__all__" ? "" : v)}
           >
-            <option value="">-- عام --</option>
-            {departments.map((d: any) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="-- عام --" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">-- عام --</SelectItem>
+              {departments.map((d: any) => (
+                <SelectItem key={d.id} value={String(d.id)}>
+                  {d.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <label className="text-sm font-semibold text-foreground mb-1.5 block">
             نوع الملف
           </label>
-          <select
-            value={fileType}
-            onChange={e => setFileType(e.target.value)}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          <Select
+            value={fileType || "__all__"}
+            onValueChange={v => setFileType(v === "__all__" ? "" : v)}
           >
-            <option value="">-- اختر --</option>
-            <option value="pdf">PDF</option>
-            <option value="docx">Word</option>
-            <option value="xlsx">Excel</option>
-            <option value="pptx">PowerPoint</option>
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="-- اختر --" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">-- اختر --</SelectItem>
+              <SelectItem value="pdf">PDF</SelectItem>
+              <SelectItem value="docx">Word</SelectItem>
+              <SelectItem value="xlsx">Excel</SelectItem>
+              <SelectItem value="pptx">PowerPoint</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="sm:col-span-2">
           <label className="text-sm font-semibold text-foreground mb-1.5 block">
             رابط الملف
           </label>
-          <input
+          <Input
             value={fileUrl}
             onChange={e => setFileUrl(e.target.value)}
             className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -112,7 +129,7 @@ function BriefFileForm({
           <label className="text-sm font-semibold text-foreground mb-1.5 block">
             الترتيب
           </label>
-          <input
+          <Input
             type="number"
             value={order}
             onChange={e => setOrder(e.target.value)}
@@ -121,7 +138,7 @@ function BriefFileForm({
           />
         </div>
         <div className="flex items-center gap-3">
-          <input
+          <Input
             type="checkbox"
             id="pub-file"
             checked={isPublished}
@@ -181,10 +198,10 @@ export default function AdminBriefFiles() {
     <PortalLayout role="admin" title="إدارة الملفات المختصرة">
       <div className="space-y-5">
         <div className="flex items-center justify-between animate-in fade-in slide-in-from-bottom-4">
-          <p className="text-xs leading-6 md:text-sm text-muted-foreground">
+          <h6 className="text-muted-foreground">
             {files?.length ?? 0} ملف
-          </p>
-          <Button
+          </h6>
+          <Button variant="ghost" 
             onClick={() => setShowForm(!showForm)}
             className="gap-2 font-bold"
           >
@@ -250,21 +267,18 @@ export default function AdminBriefFiles() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button
+                    <Button variant="ghost" size="sm" 
                       onClick={() => setEditingId(file.id)}
                       className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                     >
                       <Edit2 className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm("حذف الملف؟"))
-                          deleteMutation.mutate({ id: file.id });
-                      }}
+                    </Button>
+                    <Button variant="ghost" size="sm" 
+                      onClick={() => deleteMutation.mutate({ id: file.id })}
                       className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )

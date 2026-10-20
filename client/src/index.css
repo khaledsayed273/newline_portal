@@ -231,6 +231,12 @@
   p {
     @apply text-sm leading-7 md:text-base;
   }
+  span {
+    font-size: inherit;
+  }
+  small {
+    @apply text-xs;
+  }
 
   /* ===== Global links ===== */
   a:not([class]) {
@@ -297,12 +303,56 @@
   .card {
     @apply rounded-xl border border-border bg-card shadow-sm;
   }
+
+  /* ===== Welcome hero (TraineeDashboard): gradients have no Tailwind static form ===== */
+  .welcome-hero {
+    background: linear-gradient(
+      135deg,
+      rgba(29, 78, 216, 0.28) 0%,
+      rgba(37, 99, 235, 0.14) 50%,
+      rgba(10, 22, 40, 0.7) 100%
+    );
+    border: 1px solid rgba(37, 99, 235, 0.22);
+  }
+  .hero-glow {
+    background: radial-gradient(
+      circle,
+      rgba(59, 130, 246, 0.12) 0%,
+      transparent 70%
+    );
+    transform: translate(-30%, -30%);
+  }
+
+  /* ===== Certificate print system (exception: standalone print design) ===== */
+  .cert-sheet {
+    position: relative;
+    background-color: #fff;
+    border: 3px solid #c9a227;
+    min-height: 600px;
+    font-family: "Cairo", "Segoe UI", sans-serif;
+  }
+  .cert-frame {
+    position: absolute;
+    inset: 8px;
+    border: 1px solid #c9a227;
+    opacity: 0.35;
+    pointer-events: none;
+  }
+  .cert-navy {
+    color: #1e3a6e;
+  }
+  .cert-gold {
+    color: #c9a227;
+    font-weight: 700;
+  }
+  .cert-name {
+    font-family: Georgia, "Times New Roman", serif;
+    color: #1a1a2e;
+    @apply text-5xl font-bold;
+  }
+  .cert-waves {
+    height: 170px;
+    margin-top: 8px;
+  }
 }
 
-/* ===== تحسين RTL ===== */
-[dir="rtl"] .ltr-only {
-  direction: ltr;
-}
-[dir="rtl"] .text-left-rtl {
-  text-align: right;
-}

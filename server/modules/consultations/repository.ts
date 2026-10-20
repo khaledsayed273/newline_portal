@@ -1,0 +1,1 @@
+export { sendConsultationEmail } from "../../email";

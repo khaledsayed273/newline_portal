@@ -1,6 +1,13 @@
 import PortalLayout from "@/components/PortalLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { Lightbulb } from "lucide-react";
@@ -43,7 +50,7 @@ export default function AdminSuggestions() {
       <div className="space-y-5">
         <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-4">
           {["all", "new", "reviewed", "implemented", "rejected"].map(s => (
-            <button
+            <Button variant="ghost" size="sm" 
               key={s}
               onClick={() => setFilterStatus(s)}
               className={cn(
@@ -54,7 +61,7 @@ export default function AdminSuggestions() {
               )}
             >
               {s === "all" ? "الكل" : statusLabels[s]?.label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -78,33 +85,36 @@ export default function AdminSuggestions() {
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex-1">
                       <h4 className="text-foreground">{sug.title}</h4>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <h6 className="text-muted-foreground mt-0.5">
                         {sug.user?.name ?? "مجهول"} •{" "}
                         {new Date(sug.createdAt).toLocaleDateString("ar-SA")}
-                      </p>
+                      </h6>
                     </div>
                     <Badge variant={status.variant} className="flex-shrink-0">
                       {status.label}
                     </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-3 line-clamp-3">
+                  <h6 className="text-muted-foreground mb-3 line-clamp-3">
                     {sug.content}
-                  </p>
+                  </h6>
 
                   {editingId === sug.id ? (
                     <div className="flex gap-2 mt-2">
-                      <select
-                        value={newStatus}
-                        onChange={e => setNewStatus(e.target.value)}
-                        className="flex-1 bg-muted border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      >
-                        {Object.entries(statusLabels).map(([v, l]) => (
-                          <option key={v} value={v}>
-                            {l.label}
-                          </option>
-                        ))}
-                      </select>
+                      <Select value={newStatus} onValueChange={setNewStatus}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="الحالة" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(statusLabels).map(([v, l]) => (
+                            <SelectItem key={v} value={v}>
+                              {l.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <Button
+                        type="submit"
+                        variant="default"
                         size="sm"
                         onClick={() =>
                           updateMutation.mutate({
@@ -127,7 +137,7 @@ export default function AdminSuggestions() {
                       </Button>
                     </div>
                   ) : (
-                    <button
+                    <Button variant="ghost" size="sm" 
                       onClick={() => {
                         setEditingId(sug.id);
                         setNewStatus(sug.status ?? "new");
@@ -135,7 +145,7 @@ export default function AdminSuggestions() {
                       className="text-xs text-primary hover:underline font-semibold"
                     >
                       تحديث الحالة
-                    </button>
+                    </Button>
                   )}
                 </div>
               );

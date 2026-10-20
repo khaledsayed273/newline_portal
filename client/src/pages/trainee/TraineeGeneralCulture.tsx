@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import PortalLayout from "@/components/PortalLayout";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,7 @@ import {
   Presentation,
   Users,
   Scale,
-  ChevronRight,
+  ChevronLeft,
   ExternalLink,
   X,
 } from "lucide-react";
@@ -237,13 +238,13 @@ export default function TraineeGeneralCulture() {
     <PortalLayout role="trainee" title="الثقافة العامة">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-xl font-bold tracking-tight md:text-2xl text-foreground flex items-center gap-2">
+        <h1 className="text-foreground flex items-center gap-2">
           <Globe className="h-6 w-6 text-primary" />
           الثقافة العامة
         </h1>
-        <p className="text-xs leading-6 md:text-sm text-muted-foreground mt-1">
+        <h6 className="text-muted-foreground mt-1">
           مقاطع تعليمية وملفات مرجعية لتطوير مهاراتك المهنية
-        </p>
+        </h6>
       </div>
 
       {/* Tabs */}
@@ -252,7 +253,7 @@ export default function TraineeGeneralCulture() {
           const Icon = s.icon;
           const isActive = s.id === activeSection;
           return (
-            <button
+            <Button variant="ghost" 
               key={s.id}
               onClick={() => {
                 setActiveSection(s.id);
@@ -268,7 +269,7 @@ export default function TraineeGeneralCulture() {
             >
               <Icon className="h-4 w-4" />
               {s.label}
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -296,33 +297,33 @@ export default function TraineeGeneralCulture() {
               <div>
                 <h2
                   className={cn(
-                    "text-base font-semibold md:text-lg",
                     TONE_STYLES[section.tone].text
                   )}
                 >
                   {section.label}
                 </h2>
-                <p className="text-xs text-muted-foreground">
+                <h6 className="text-muted-foreground">
                   {section.description}
-                </p>
+                </h6>
               </div>
             </div>
           </div>
 
           {/* Videos */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide px-1">
+            <h6 className="text-muted-foreground uppercase px-1">
               مقاطع الفيديو
-            </p>
+            </h6>
             {section.videos.map((video, idx) => (
-              <button
+              <Button
+                variant="ghost"
                 key={video.id}
                 onClick={() => {
                   setActiveVideo(video.id);
                   setShowPdf(false);
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 p-3 rounded-xl border text-start transition-all duration-200",
+                  "h-auto w-full items-center gap-3 rounded-xl border p-3 text-start transition-all duration-200",
                   activeVideo === video.id
                     ? cn(TONE_STYLES[section.tone].panel, "shadow-sm")
                     : "bg-card border-border hover:shadow-sm hover:border-primary/30"
@@ -341,7 +342,7 @@ export default function TraineeGeneralCulture() {
                 <div className="flex-1 min-w-0">
                   <p
                     className={cn(
-                      "text-sm font-semibold leading-snug line-clamp-2",
+                      "font-semibold line-clamp-2",
                       activeVideo === video.id
                         ? TONE_STYLES[section.tone].text
                         : "text-card-foreground"
@@ -350,16 +351,16 @@ export default function TraineeGeneralCulture() {
                     {video.title}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground">
                       الدرس{idx + 1}
                     </span>
-                    <span className="text-xs text-muted-foreground">•</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground">•</span>
+                    <span className="text-muted-foreground">
                       {video.duration}
                     </span>
                   </div>
                 </div>
-                <ChevronRight
+                <ChevronLeft
                   className={cn(
                     "h-4 w-4 flex-shrink-0",
                     activeVideo === video.id
@@ -367,22 +368,23 @@ export default function TraineeGeneralCulture() {
                       : "text-muted-foreground/50"
                   )}
                 />
-              </button>
+              </Button>
             ))}
           </div>
 
           {/* PDF */}
           <div className="space-y-2 pt-2">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide px-1">
+            <h6 className="text-muted-foreground uppercase px-1">
               ملف مرجعي
-            </p>
-            <button
+            </h6>
+            <Button
+              variant="ghost"
               onClick={() => {
                 setShowPdf(true);
                 setActiveVideo(null);
               }}
-              className={cn(
-                "w-full flex items-center gap-3 p-3 rounded-xl border text-start transition-all duration-200",
+                className={cn(
+                "h-auto w-full items-center gap-3 rounded-xl border p-3 text-start transition-all duration-200",
                 showPdf
                   ? cn(TONE_STYLES[section.tone].panel, "shadow-sm")
                   : "bg-card border-border hover:shadow-sm hover:border-primary/30"
@@ -401,7 +403,7 @@ export default function TraineeGeneralCulture() {
               <div className="flex-1 min-w-0">
                 <p
                   className={cn(
-                    "text-sm font-semibold leading-snug line-clamp-2",
+                    "font-semibold line-clamp-2",
                     showPdf
                       ? TONE_STYLES[section.tone].text
                       : "text-card-foreground"
@@ -413,7 +415,7 @@ export default function TraineeGeneralCulture() {
                   PDF
                 </Badge>
               </div>
-              <ChevronRight
+              <ChevronLeft
                 className={cn(
                   "h-4 w-4 flex-shrink-0",
                   showPdf
@@ -421,7 +423,7 @@ export default function TraineeGeneralCulture() {
                     : "text-muted-foreground/50"
                 )}
               />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -429,10 +431,7 @@ export default function TraineeGeneralCulture() {
         <div className="lg:col-span-2 order-1 lg:order-2">
           {activeVideo ? (
             <div className="bg-black rounded-2xl overflow-hidden shadow-xl">
-              <div
-                className="relative w-full"
-                style={{ paddingBottom: "56.25%" }}
-              >
+              <div className="relative w-full aspect-video">
                 <iframe
                   key={activeVideo}
                   src={`https://www.youtube.com/embed/${activeVideo}?autoplay=1&rel=0&modestbranding=1`}
@@ -444,7 +443,7 @@ export default function TraineeGeneralCulture() {
               </div>
               {/* Video Info */}
               <div className="p-4 bg-gray-900">
-                <p className="text-white font-semibold text-sm">
+                <p className="text-white font-semibold">
                   {section.videos.find(v => v.id === activeVideo)?.title}
                 </p>
                 <div className="flex items-center gap-3 mt-2">
@@ -468,7 +467,7 @@ export default function TraineeGeneralCulture() {
                   <FileText
                     className={cn("h-4 w-4", TONE_STYLES[section.tone].text)}
                   />
-                  <span className="text-sm font-semibold text-foreground">
+                  <span className="font-semibold text-foreground">
                     {section.pdf.title}
                   </span>
                 </div>
@@ -485,20 +484,19 @@ export default function TraineeGeneralCulture() {
                     <ExternalLink className="h-3 w-3" />
                     فتح في نافذة جديدة
                   </a>
-                  <button
+                  <Button variant="ghost" size="sm" 
                     onClick={() => setShowPdf(false)}
                     className="p-1.5 rounded-lg hover:bg-muted transition-colors"
                   >
                     <X className="h-4 w-4 text-muted-foreground" />
-                  </button>
+                  </Button>
                 </div>
               </div>
               <iframe
                 key={section.pdf.url}
                 src={`https://docs.google.com/viewer?url=${encodeURIComponent(section.pdf.url)}&embedded=true`}
                 title={section.pdf.title}
-                className="w-full"
-                style={{ height: "600px" }}
+                className="w-full h-[600px]"
               />
             </div>
           ) : (
@@ -513,11 +511,11 @@ export default function TraineeGeneralCulture() {
                 <SectionIcon className="h-10 w-10" />
               </div>
               <h3 className="text-card-foreground mb-2">{section.label}</h3>
-              <p className="text-muted-foreground text-sm mb-6 max-w-xs">
+              <p className="text-muted-foreground mb-6 max-w-xs">
                 {section.description}
               </p>
               <div className="flex flex-col gap-2 w-full max-w-xs">
-                <button
+                <Button variant="ghost" 
                   onClick={() => setActiveVideo(section.videos[0].id)}
                   className={cn(
                     "flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all",
@@ -526,14 +524,14 @@ export default function TraineeGeneralCulture() {
                 >
                   <Play className="h-4 w-4" />
                   ابدأ المشاهدة
-                </button>
-                <button
+                </Button>
+                <Button variant="ghost" 
                   onClick={() => setShowPdf(true)}
                   className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-border text-foreground font-semibold hover:bg-muted transition-all"
                 >
                   <FileText className="h-4 w-4" />
                   عرض الملف المرجعي
-                </button>
+                </Button>
               </div>
             </div>
           )}

@@ -1,6 +1,14 @@
 import PortalLayout from "@/components/PortalLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { AlertTriangle } from "lucide-react";
@@ -53,7 +61,7 @@ export default function AdminIncidents() {
       <div className="space-y-5">
         <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-4">
           {["all", "open", "in_progress", "resolved", "closed"].map(s => (
-            <button
+            <Button variant="ghost" size="sm" 
               key={s}
               onClick={() => setFilterStatus(s)}
               className={cn(
@@ -64,7 +72,7 @@ export default function AdminIncidents() {
               )}
             >
               {s === "all" ? "الكل" : statusLabels[s]?.label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -89,10 +97,10 @@ export default function AdminIncidents() {
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex-1">
                       <h4 className="text-foreground">{inc.title}</h4>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <h6 className="text-muted-foreground mt-0.5">
                         المتدرب: {inc.user?.name ?? "مجهول"} •{" "}
                         {new Date(inc.createdAt).toLocaleDateString("ar-SA")}
-                      </p>
+                      </h6>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
                       <Badge variant={priority.variant}>{priority.label}</Badge>
@@ -100,25 +108,26 @@ export default function AdminIncidents() {
                     </div>
                   </div>
                   {inc.description && (
-                    <p className="text-xs text-muted-foreground mb-3">
+                    <h6 className="text-muted-foreground mb-3">
                       {inc.description}
-                    </p>
+                    </h6>
                   )}
 
                   {editingId === inc.id ? (
                     <div className="space-y-3 mt-3 pt-3 border-t border-border">
-                      <select
-                        value={newStatus}
-                        onChange={e => setNewStatus(e.target.value)}
-                        className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      >
-                        {Object.entries(statusLabels).map(([v, l]) => (
-                          <option key={v} value={v}>
-                            {l.label}
-                          </option>
-                        ))}
-                      </select>
-                      <textarea
+                      <Select value={newStatus} onValueChange={setNewStatus}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="الحالة" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(statusLabels).map(([v, l]) => (
+                            <SelectItem key={v} value={v}>
+                              {l.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Textarea
                         value={resolution}
                         onChange={e => setResolution(e.target.value)}
                         rows={2}
@@ -127,6 +136,8 @@ export default function AdminIncidents() {
                       />
                       <div className="flex gap-2">
                         <Button
+                          type="submit"
+                          variant="default"
                           size="sm"
                           onClick={() =>
                             updateMutation.mutate({
@@ -150,7 +161,7 @@ export default function AdminIncidents() {
                       </div>
                     </div>
                   ) : (
-                    <button
+                    <Button variant="ghost" size="sm" 
                       onClick={() => {
                         setEditingId(inc.id);
                         setNewStatus(inc.status ?? "open");
@@ -159,7 +170,7 @@ export default function AdminIncidents() {
                       className="text-xs text-primary hover:underline font-semibold"
                     >
                       تحديث الحالة
-                    </button>
+                    </Button>
                   )}
                 </div>
               );

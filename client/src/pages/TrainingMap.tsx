@@ -13,7 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -91,13 +90,13 @@ export default function TrainingMap() {
   return (
     <PortalLayout role="trainee" title="الخارطة التدريبية">
       {/* Header */}
-      <div className="bg-gradient-to-l from-blue-900 to-blue-700 py-10 px-6">
+      <div className="bg-gradient-to-l from-primary to-primary/70 px-4 py-8 sm:px-6 sm:py-10">
         <h1 className="mb-2 text-white">🗺️ الخارطة التدريبية لـ NewLine</h1>
         <p className="text-white/85">
           خارطة تدريبية متكاملة بمستوى أكاديميات DHL وMaersk وAmazon
         </p>
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mt-6">
+          <div className="mt-6 grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 md:grid-cols-6">
             {[
               { label: "إجمالي الدورات", value: stats.total, icon: "📚" },
               { label: "إلزامية", value: stats.mandatory, icon: "📌" },
@@ -112,10 +111,10 @@ export default function TrainingMap() {
             ].map(s => (
               <div key={s.label} className="card p-3 text-center">
                 <div className="text-2xl">{s.icon}</div>
-                <div className="text-2xl font-bold text-card-foreground">
+                <h2 className="text-card-foreground">
                   {s.value}
-                </div>
-                <div className="text-xs text-muted-foreground">{s.label}</div>
+                </h2>
+                <h6 className="text-muted-foreground">{s.label}</h6>
               </div>
             ))}
           </div>
@@ -125,17 +124,17 @@ export default function TrainingMap() {
       <div>
         {/* Filters */}
         <div className="card p-4 mb-6 flex flex-wrap gap-3 items-center shadow-sm">
-          <Input
-            placeholder="🔍 ابحث في الدورات..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-64"
+            <Input
+              placeholder="🔍 ابحث في الدورات..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full sm:w-64"
           />
           <Select
             value={String(selectedDept)}
             onValueChange={v => setSelectedDept(Number(v))}
           >
-            <SelectTrigger className="w-52">
+            <SelectTrigger className="w-full sm:w-52">
               <SelectValue placeholder="الإدارة" />
             </SelectTrigger>
             <SelectContent>
@@ -152,7 +151,7 @@ export default function TrainingMap() {
               setFilterRequired(v as "all" | "required" | "optional")
             }
           >
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="النوع" />
             </SelectTrigger>
             <SelectContent>
@@ -162,7 +161,7 @@ export default function TrainingMap() {
             </SelectContent>
           </Select>
           <Select value={filterLevel} onValueChange={setFilterLevel}>
-            <SelectTrigger className="w-36">
+            <SelectTrigger className="w-full sm:w-36">
               <SelectValue placeholder="المستوى" />
             </SelectTrigger>
             <SelectContent>
@@ -188,7 +187,7 @@ export default function TrainingMap() {
               جدول
             </Button>
           </div>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-muted-foreground">
             {filtered.length} دورة
           </span>
         </div>
@@ -204,7 +203,7 @@ export default function TrainingMap() {
               <div key={pathKey}>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="h-1 w-8 bg-primary rounded" />
-                  <h2 className="text-lg font-semibold md:text-xl text-foreground">
+                  <h2 className="text-foreground">
                     {pathKey}
                   </h2>
                   <Badge variant="outline">{pathCourses.length} دورة</Badge>
@@ -254,7 +253,7 @@ export default function TrainingMap() {
                             </Badge>
                             <Badge variant="secondary">{course.category}</Badge>
                           </div>
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <div className="flex items-center justify-between text-muted-foreground">
                             <span>👤 {course.targetRole}</span>
                             <div className="flex gap-1">
                               {contentTypes.map((ct: string) => (
@@ -264,7 +263,7 @@ export default function TrainingMap() {
                               ))}
                             </div>
                           </div>
-                          <div className="mt-2 text-xs text-primary font-medium">
+                          <div className="mt-2 text-primary font-medium">
                             🔗 {course.source}
                           </div>
                         </CardContent>
@@ -277,8 +276,8 @@ export default function TrainingMap() {
           </div>
         ) : (
           // Table View
-          <div className="card overflow-hidden shadow-sm">
-            <Table>
+          <div className="card overflow-x-auto shadow-sm">
+            <Table className="min-w-[900px]">
               <TableHeader className="bg-muted">
                 <TableRow>
                   <TableHead className="text-start">الدورة</TableHead>

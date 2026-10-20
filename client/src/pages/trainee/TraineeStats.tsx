@@ -8,20 +8,12 @@ import {
   Clock,
   TrendingUp,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function TraineeStats() {
-  const userIdentifier = useMemo(() => {
-    let id = localStorage.getItem("userIdentifier");
-    if (!id) {
-      id = `user_${Math.random().toString(36).substr(2, 12)}`;
-      localStorage.setItem("userIdentifier", id);
-    }
-    return id;
-  }, []);
-
-  const { data: stats, isLoading } = trpc.traineeStats.get.useQuery({
-    userIdentifier,
+  const { user } = useAuth({ redirectOnUnauthenticated: true, redirectPath: "/login" });
+  const { data: stats, isLoading } = trpc.traineeStats.get.useQuery(undefined, {
+    enabled: Boolean(user),
   });
   const { data: enrollments } = trpc.enrollments.myEnrollments.useQuery();
 
@@ -69,7 +61,7 @@ export default function TraineeStats() {
       <div className="space-y-5">
         {/* بطاقات الإحصائيات */}
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 sm:grid-cols-3">
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
@@ -78,7 +70,7 @@ export default function TraineeStats() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 sm:grid-cols-3">
             {cards.map(card => {
               const Icon = card.icon;
               return (
@@ -89,13 +81,13 @@ export default function TraineeStats() {
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary/10">
                     <Icon size={20} className="text-primary" />
                   </div>
-                  <span className="text-xl font-bold tracking-tight md:text-2xl text-foreground leading-none">
+                  <h2 className="text-foreground">
                     {card.value}
                     {card.suffix}
-                  </span>
-                  <span className="text-xs text-muted-foreground font-bold text-center">
+                  </h2>
+                  <h6 className="text-muted-foreground text-center">
                     {card.label}
-                  </span>
+                  </h6>
                 </div>
               );
             })}
@@ -105,10 +97,10 @@ export default function TraineeStats() {
         {/*شريط تقدم الإنجاز*/}
         <div className="rounded-2xl p-5 bg-card border border-border shadow-sm">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-sm font-medium text-foreground">
+            <span className="font-medium text-foreground">
               نسبة إنجاز الدورات
             </span>
-            <span className="text-sm font-medium text-success-emphasis">
+            <span className="font-medium text-success-emphasis">
               {stats?.completionRate ?? 0}%
             </span>
           </div>

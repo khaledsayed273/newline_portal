@@ -13,7 +13,7 @@ export default function NotFound() {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background">
       <Card className="mx-4 w-full max-w-lg border-border bg-card shadow-lg">
-        <CardContent className="pb-8 pt-8 text-center">
+        <CardContent className="py-8 text-center">
           <div className="mb-6 flex justify-center">
             <div className="relative">
               <div className="absolute inset-0 animate-pulse rounded-full bg-destructive/10" />
@@ -23,7 +23,7 @@ export default function NotFound() {
 
           <h1 className="mb-2 text-foreground">404</h1>
 
-          <h2 className="text-lg font-semibold md:text-xl mb-4 text-muted-foreground">
+          <h2 className="mb-4 text-muted-foreground">
             Page Not Found
           </h2>
 
@@ -37,7 +37,7 @@ export default function NotFound() {
             id="not-found-button-group"
             className="flex flex-col justify-center gap-3 sm:flex-row"
           >
-            <Button
+            <Button variant="ghost" 
               onClick={handleGoHome}
               className="bg-primary px-6 py-2.5 text-primary-foreground shadow-md transition-all duration-200 hover:bg-primary/90 hover:shadow-lg"
             >

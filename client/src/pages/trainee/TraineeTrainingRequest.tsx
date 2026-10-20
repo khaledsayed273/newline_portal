@@ -1,6 +1,8 @@
 import PortalLayout from "@/components/PortalLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { Plus, Send } from "lucide-react";
 import { useState } from "react";
@@ -38,10 +40,10 @@ export default function TraineeTrainingRequest() {
     <PortalLayout role="trainee" title="طلب تدريب">
       <div className="space-y-6">
         <div className="flex items-center justify-between animate-in fade-in slide-in-from-bottom-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground">
             قدّم طلب تدريب جديد وتابع حالة طلباتك
           </p>
-          <Button
+          <Button variant="ghost" 
             onClick={() => setShowForm(!showForm)}
             className="gap-2 font-bold"
           >
@@ -58,14 +60,14 @@ export default function TraineeTrainingRequest() {
             }}
             className="bg-card border border-border rounded-2xl p-5 space-y-4 animate-in fade-in slide-in-from-bottom-4"
           >
-            <h3 className="text-base font-semibold md:text-lg text-foreground">
+            <h3 className="text-foreground">
               طلب تدريب جديد
             </h3>
             <div>
               <label className="text-sm font-semibold text-foreground mb-1.5 block">
                 موضوع التدريب *
               </label>
-              <input
+              <Input
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 required
@@ -77,7 +79,7 @@ export default function TraineeTrainingRequest() {
               <label className="text-sm font-semibold text-foreground mb-1.5 block">
                 التفاصيل
               </label>
-              <textarea
+              <Textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 rows={4}
@@ -86,7 +88,7 @@ export default function TraineeTrainingRequest() {
               />
             </div>
             <div className="flex gap-3">
-              <Button
+              <Button variant="ghost" 
                 type="submit"
                 disabled={createMutation.isPending}
                 className="font-bold gap-2"
@@ -108,10 +110,10 @@ export default function TraineeTrainingRequest() {
         {!isLoading && requests?.length === 0 && !showForm ? (
           <div className="flex flex-col items-center text-center py-16">
             <Send className="h-12 w-12 text-muted-foreground/40 mb-4" />
-            <h3 className="text-base font-semibold md:text-lg text-foreground mb-2">
+            <h3 className="text-foreground mb-2">
               لا توجد طلبات
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground">
               لم تقدّم أي طلبات تدريب بعد
             </p>
           </div>
@@ -123,17 +125,17 @@ export default function TraineeTrainingRequest() {
                 <div key={req.id} className="card p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <h4 className="text-sm font-medium text-foreground mb-1">
+                      <h5 className="text-foreground mb-1">
                         {req.title}
-                      </h4>
+                      </h5>
                       {req.description && (
-                        <p className="text-xs text-muted-foreground mb-2">
+                        <h6 className="text-muted-foreground mb-2">
                           {req.description}
-                        </p>
+                        </h6>
                       )}
-                      <p className="text-xs text-muted-foreground">
+                      <h6 className="text-muted-foreground">
                         {new Date(req.createdAt).toLocaleDateString("ar-SA")}
-                      </p>
+                      </h6>
                     </div>
                     <Badge variant={status.variant} className="flex-shrink-0">
                       {status.label}
@@ -141,10 +143,10 @@ export default function TraineeTrainingRequest() {
                   </div>
                   {req.adminNotes && (
                     <div className="mt-3 pt-3 border-t border-border">
-                      <p className="text-xs text-muted-foreground">
+                      <h6 className="text-muted-foreground">
                         <span className="font-semibold">ملاحظة المدير: </span>
                         {req.adminNotes}
-                      </p>
+                      </h6>
                     </div>
                   )}
                 </div>

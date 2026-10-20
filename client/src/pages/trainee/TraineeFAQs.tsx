@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import PortalLayout from "@/components/PortalLayout";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
@@ -17,7 +18,7 @@ export default function TraineeFAQs() {
     <PortalLayout role="trainee" title="الأسئلة الشائعة">
       <div className="space-y-6">
         <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-4">
-          <button
+          <Button variant="ghost" 
             onClick={() => setSelectedDept(undefined)}
             className={cn(
               "px-4 py-2 rounded-full text-sm font-semibold transition-all",
@@ -27,9 +28,9 @@ export default function TraineeFAQs() {
             )}
           >
             الكل
-          </button>
+          </Button>
           {departments?.map(dept => (
-            <button
+            <Button variant="ghost" 
               key={dept.id}
               onClick={() => setSelectedDept(dept.id)}
               className={cn(
@@ -40,7 +41,7 @@ export default function TraineeFAQs() {
               )}
             >
               {dept.name}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -59,11 +60,11 @@ export default function TraineeFAQs() {
           <div className="space-y-2 animate-in fade-in slide-in-from-bottom-4">
             {faqs?.map((faq, i) => (
               <div key={faq.id} className="card overflow-hidden">
-                <button
+                <Button
                   onClick={() => setOpenFaq(openFaq === faq.id ? null : faq.id)}
                   className="w-full flex items-center justify-between p-4 text-start hover:bg-muted/30 transition-colors"
                 >
-                  <span className="text-sm font-medium text-foreground">
+                  <span className="font-medium text-foreground">
                     {faq.question}
                   </span>
                   <ChevronDown
@@ -72,9 +73,9 @@ export default function TraineeFAQs() {
                       openFaq === faq.id && "rotate-180"
                     )}
                   />
-                </button>
+                </Button>
                 {openFaq === faq.id && (
-                  <div className="px-4 pb-4 text-xs leading-6 md:text-sm text-muted-foreground leading-relaxed border-t border-border pt-3">
+                  <div className="px-4 pb-4 text-muted-foreground border-t border-border pt-3">
                     {faq.answer}
                   </div>
                 )}

@@ -1,4 +1,6 @@
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
 import { Award, Printer, ArrowRight } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -60,7 +62,7 @@ function NameInputForm({ onSave }: { onSave: (name: string) => void }) {
   const [name, setName] = useState("");
   return (
     <div className="space-y-4">
-      <input
+      <Input
         type="text"
         value={name}
         onChange={e => setName(e.target.value)}
@@ -68,15 +70,14 @@ function NameInputForm({ onSave }: { onSave: (name: string) => void }) {
         placeholder="أدخل اسمك الكامل"
         className="card w-full px-4 py-3 text-start text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-base"
         autoFocus
-        dir="rtl"
       />
-      <button
+      <Button variant="ghost" 
         onClick={() => name.trim() && onSave(name)}
         disabled={!name.trim()}
         className="w-full bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground font-bold py-3 rounded-xl transition-all active:scale-95"
       >
         تأكيد الاسم
-      </button>
+      </Button>
     </div>
   );
 }
@@ -123,10 +124,10 @@ export default function PathCertificate() {
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Award className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="text-lg font-semibold md:text-xl text-foreground mb-1">
+              <h2 className="text-foreground mb-1">
                 أدخل اسمك في الشهادة
               </h2>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground">
                 سيظهر اسمك في شهادة الإتمام
               </p>
             </div>
@@ -137,27 +138,27 @@ export default function PathCertificate() {
 
       {/* شريط التحكم */}
       <div className="print:hidden bg-card border-b border-border px-6 py-4 flex items-center justify-between rounded-none">
-        <button
+        <Button variant="ghost" 
           onClick={() => navigate("/courses")}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowRight className="w-4 h-4" />
-          <span className="font-medium text-sm">العودة للدورات</span>
-        </button>
+          <span className="font-medium">العودة للدورات</span>
+        </Button>
         <div className="flex items-center gap-3">
-          <button
+          <Button variant="ghost" 
             onClick={() => setShowNameInput(true)}
             className="text-sm text-muted-foreground hover:text-foreground underline transition-colors"
           >
             تغيير الاسم
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" 
             onClick={handlePrint}
             className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-5 py-2.5 rounded-xl transition-all active:scale-95"
           >
             <Printer className="w-4 h-4" />
             طباعة الشهادة
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -165,18 +166,10 @@ export default function PathCertificate() {
       <div className="flex items-center justify-center p-8 print:p-0 print:block">
         <div
           id="certificate"
-          className="bg-white w-full max-w-5xl shadow-2xl print:shadow-none print:max-w-none overflow-hidden relative"
-          style={{
-            fontFamily: "'Cairo', 'Segoe UI', sans-serif",
-            minHeight: "640px",
-            border: "3px solid #C9A227",
-          }}
+          className="cert-sheet bg-white w-full max-w-5xl shadow-2xl print:shadow-none print:max-w-none overflow-hidden"
         >
           {/* إطار ذهبي داخلي */}
-          <div
-            className="absolute inset-2 pointer-events-none"
-            style={{ border: "1px solid #C9A227", opacity: 0.4 }}
-          />
+          <div className="cert-frame" />
 
           {/*الجزء العلوي الأبيض*/}
           <div className="relative px-16 pt-10 pb-4 text-center">
@@ -188,95 +181,73 @@ export default function PathCertificate() {
                   alt="شعار نيولاين"
                   className="h-24 object-contain"
                   onError={e => {
-                    const el = e.target as HTMLImageElement;
-                    el.style.display = "none";
+                    e.currentTarget.hidden = true;
                   }}
                 />
               </div>
             </div>
 
             {/* عنوان مزدوج عربي وإنجليزي */}
-            <h1
-              className="text-3xl font-extrabold tracking-widest mb-1"
-              style={{ color: "#1E3A6E" }}
-            >
+            <h1 className="cert-navy mb-1">
               شهادة إتمام مسار تدريبي
             </h1>
-            <p
-              className="text-base font-semibold uppercase tracking-widest mb-5"
-              style={{ color: "#C9A227" }}
-            >
+            <p className="cert-gold uppercase mb-5">
               CERTIFICATE OF ACHIEVEMENT
             </p>
 
             {/*نص تقديمي*/}
-            <p className="text-gray-600 text-base mb-1">
+            <p className="text-gray-600 mb-1">
               تُقدِّم شركة نيولاين للخدمات اللوجستية هذه الشهادة إلى
             </p>
-            <p className="text-gray-500 text-sm mb-4">
+            <p className="text-gray-500 mb-4">
               Newline Logistics Company proudly presents this certificate to
             </p>
 
             {/* اسم المتدرب */}
-            <div
-              className="text-5xl font-bold mb-4"
-              style={{
-                fontFamily: "Georgia, 'Times New Roman', serif",
-                color: "#1a1a2e",
-              }}
-            >
+            <div className="cert-name mb-4">
               {traineeName || "المتدرب"}
             </div>
 
             {/* اسم البرنامج */}
-            <p className="text-gray-600 text-sm mb-1">
+            <p className="text-gray-600 mb-1">
               لإتمامه بنجاح المسار المعتمد الخاص به:
             </p>
-            <p className="text-gray-500 text-xs mb-2">
+            <h6 className="text-gray-500 mb-2">
               for successfully completing the training path entitled:
-            </p>
-            <p className="font-bold text-xl mb-3" style={{ color: "#1E3A6E" }}>
+            </h6>
+            <h2 className="cert-navy mb-3">
               "{programName}"
-            </p>
+            </h2>
 
             {/* درجة الاختبار */}
             {score && (
               <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-5 py-1.5 mb-3">
-                <span className="text-muted-foreground text-sm">
+                <span className="text-muted-foreground">
                   درجة الاختبار / Score:
                 </span>
-                <span
-                  className="font-extrabold text-xl"
-                  style={{ color: "#1E3A6E" }}
-                >
+                <h2 className="cert-navy">
                   {score}/100
-                </span>
+                </h2>
               </div>
             )}
 
-            <p className="text-gray-500 text-xs max-w-2xl mx-auto leading-relaxed mb-2 px-4">
+            <h6 className="text-gray-500 max-w-2xl mx-auto mb-2 px-4">
               {programDesc}
-            </p>
-            <p className="text-gray-500 text-xs mb-1">
+            </h6>
+            <h6 className="text-gray-500 mb-1">
               Accordingly, this certificate is awarded in recognition of the
               participant's commitment, attendance, active participation, and
               successful completion of the required examinations and assessments
               throughout the program.
-            </p>
-            <p
-              className="font-bold text-base mb-1"
-              style={{ color: "#C9A227" }}
-            >
+            </h6>
+            <p className="cert-gold mb-1">
               {dates.from} - {dates.to}
             </p>
-            <p className="text-gray-500 text-xs">{dates.issuedAr}</p>
+            <h6 className="text-gray-500">{dates.issuedAr}</h6>
           </div>
 
           {/* الموجات الزرقاء والذهبية */}
-          <div
-            className="relative"
-            style={{ height: "180px", marginTop: "4px" }}
-          >
+          <div className="cert-waves relative">
             <svg
               viewBox="0 0 1200 180"
               xmlns="http://www.w3.org/2000/svg"
@@ -413,20 +384,20 @@ export default function PathCertificate() {
 
       {/*أزرار إضافية*/}
       <div className="print:hidden flex justify-center gap-4 pb-8">
-        <button
+        <Button variant="ghost" 
           onClick={handlePrint}
           className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl transition-all active:scale-95 shadow-lg"
         >
           <Printer className="w-5 h-5" />
           طباعة / حفظ PDF
-        </button>
-        <button
+        </Button>
+        <Button variant="ghost" 
           onClick={() => navigate("/courses")}
           className="flex items-center gap-2 bg-muted hover:bg-muted/80 text-foreground font-bold px-6 py-3 rounded-xl transition-all"
         >
           <ArrowRight className="w-5 h-5" />
           العودة للمسارات
-        </button>
+        </Button>
       </div>
 
       {/*CSS للطباعة*/}

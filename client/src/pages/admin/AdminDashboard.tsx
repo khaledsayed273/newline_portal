@@ -19,22 +19,22 @@ export default function AdminDashboard() {
       label: "المتدربون",
       value: stats?.users,
       icon: Users,
-      color: "text-violet-600",
-      bg: "bg-violet-50 dark:bg-violet-950/40",
+      color: "text-info-emphasis",
+      bg: "bg-info/10",
     },
     {
       label: "الدورات",
       value: stats?.courses,
       icon: BookOpen,
-      color: "text-purple-600",
-      bg: "bg-purple-50 dark:bg-purple-950/40",
+      color: "text-primary",
+      bg: "bg-primary/10",
     },
     {
       label: "المسارات",
       value: stats?.tracks,
       icon: GraduationCap,
-      color: "text-indigo-600",
-      bg: "bg-indigo-50 dark:bg-indigo-950/40",
+      color: "text-primary",
+      bg: "bg-primary/10",
     },
     {
       label: "الملفات المختصرة",
@@ -47,29 +47,29 @@ export default function AdminDashboard() {
       label: "التسجيلات",
       value: stats?.enrollments,
       icon: BookOpen,
-      color: "text-fuchsia-600",
-      bg: "bg-fuchsia-50 dark:bg-fuchsia-950/40",
+      color: "text-secondary-foreground",
+      bg: "bg-secondary/20",
     },
     {
       label: "الشهادات",
       value: stats?.certificates,
       icon: Award,
-      color: "text-amber-600",
-      bg: "bg-amber-50 dark:bg-amber-950/40",
+      color: "text-warning-emphasis",
+      bg: "bg-warning/10",
     },
     {
       label: "التعثرات",
       value: stats?.incidents,
       icon: AlertTriangle,
-      color: "text-red-600",
-      bg: "bg-red-50 dark:bg-red-950/40",
+      color: "text-destructive",
+      bg: "bg-destructive/10",
     },
     {
       label: "طلبات معلقة",
       value: stats?.pendingRequests,
       icon: Send,
-      color: "text-green-600",
-      bg: "bg-green-50 dark:bg-green-950/40",
+      color: "text-success-emphasis",
+      bg: "bg-success/10",
     },
   ];
 
@@ -84,19 +84,19 @@ export default function AdminDashboard() {
             </div>
             <div>
               <h2 className="text-foreground">لوحة تحكم المدير</h2>
-              <p className="text-xs leading-6 md:text-sm text-muted-foreground mt-1">
+              <h6 className="text-muted-foreground mt-1">
                 إدارة شاملة لبوابة نيولاين للتدريب
-              </p>
+              </h6>
             </div>
           </div>
         </div>
 
         {/* بطاقات الإحصائيات */}
         <div>
-          <h3 className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mb-4">
+          <h6 className="text-muted-foreground uppercase mb-4">
             نظرة عامة
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          </h6>
+          <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 sm:grid-cols-4">
             {statCards.map((card, i) => (
               <div
                 key={card.label}
@@ -114,12 +114,12 @@ export default function AdminDashboard() {
                 >
                   <card.icon className="h-5 w-5" />
                 </div>
-                <p className="text-xl font-bold tracking-tight md:text-2xl text-foreground">
+                <h2 className="text-foreground">
                   {isLoading ? "—" : (card.value ?? 0)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1 font-medium">
+                </h2>
+                <h6 className="text-muted-foreground mt-1">
                   {card.label}
-                </p>
+                </h6>
               </div>
             ))}
           </div>
@@ -127,9 +127,9 @@ export default function AdminDashboard() {
 
         {/* روابط سريعة */}
         <div>
-          <h3 className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mb-4">
+          <h6 className="text-muted-foreground uppercase mb-4">
             إجراءات سريعة
-          </h3>
+          </h6>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
               {
@@ -181,10 +181,10 @@ export default function AdminDashboard() {
                   <item.icon className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">
+                  <p className="font-medium text-foreground">
                     {item.label}
                   </p>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  <h6 className="text-muted-foreground">{item.desc}</h6>
                 </div>
               </a>
             ))}

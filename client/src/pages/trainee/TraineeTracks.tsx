@@ -9,7 +9,6 @@ import {
   BookOpen,
   CheckCircle2,
   ChevronLeft,
-  Circle,
   GraduationCap,
   Play,
   Users,
@@ -42,13 +41,13 @@ export default function TraineeTracks() {
       <PortalLayout role="trainee" title={selectedTrackData.title}>
         <div className="space-y-6">
           {/* زر العودة */}
-          <button
+          <Button variant="ghost" 
             onClick={() => setSelectedTrack(null)}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
           >
             <ArrowRight className="h-4 w-4" />
             العودة للمسارات
-          </button>
+          </Button>
 
           {/* رأس المسار */}
           <div className="card p-6 animate-in fade-in slide-in-from-bottom-4">
@@ -61,7 +60,7 @@ export default function TraineeTracks() {
                   {selectedTrackData.title}
                 </h2>
                 {selectedTrackData.description && (
-                  <p className="text-muted-foreground text-sm leading-relaxed">
+                  <p className="text-muted-foreground">
                     {selectedTrackData.description}
                   </p>
                 )}
@@ -77,9 +76,9 @@ export default function TraineeTracks() {
 
           {/* دورات المسار */}
           <div>
-            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-4">
+            <h5 className="text-muted-foreground uppercase mb-4">
               دورات هذا المسار ({trackCourses?.length ?? 0} دورة)
-            </h3>
+            </h5>
 
             {!trackCourses ? (
               <div className="space-y-3">
@@ -90,7 +89,7 @@ export default function TraineeTracks() {
             ) : trackCourses.length === 0 ? (
               <div className="flex flex-col items-center text-center">
                 <BookOpen className="h-10 w-10 text-muted-foreground/40 mb-3" />
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground">
                   لم يتم إضافة دورات لهذا المسار بعد
                 </p>
               </div>
@@ -119,7 +118,7 @@ export default function TraineeTracks() {
                       {/* رقم الخطوة */}
                       <div
                         className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm",
+                          "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-bold",
                           isCompleted
                             ? "bg-success/10 text-success-emphasis"
                             : "bg-primary/10 text-primary"
@@ -134,7 +133,7 @@ export default function TraineeTracks() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <p className="font-semibold text-foreground text-sm">
+                          <p className="font-semibold text-foreground">
                             الدورة رقم {tc.courseId}
                           </p>
                           {tc.isRequired && (
@@ -151,7 +150,7 @@ export default function TraineeTracks() {
                                 style={{ width: `${progress}%` }}
                               />
                             </div>
-                            <span className="text-xs text-primary font-semibold">
+                            <span className="text-primary font-semibold">
                               {progress}%
                             </span>
                           </div>
@@ -183,7 +182,7 @@ export default function TraineeTracks() {
       <div className="space-y-6">
         {/* فلتر الإدارات */}
         <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-4">
-          <button
+          <Button variant="ghost" 
             onClick={() => setSelectedDept(undefined)}
             className={cn(
               "px-4 py-2 rounded-full text-sm font-semibold transition-all",
@@ -193,9 +192,9 @@ export default function TraineeTracks() {
             )}
           >
             الكل
-          </button>
+          </Button>
           {departments?.map(dept => (
-            <button
+            <Button variant="ghost" 
               key={dept.id}
               onClick={() => setSelectedDept(dept.id)}
               className={cn(
@@ -206,7 +205,7 @@ export default function TraineeTracks() {
               )}
             >
               {dept.name}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -221,7 +220,7 @@ export default function TraineeTracks() {
           <div className="flex flex-col items-center text-center">
             <GraduationCap className="h-12 w-12 text-muted-foreground/40 mb-4" />
             <h3 className="text-foreground mb-2">لا توجد مسارات</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground">
               لم يتم إضافة مسارات تدريبية بعد
             </p>
           </div>
@@ -241,13 +240,13 @@ export default function TraineeTracks() {
                     <GraduationCap className="h-6 w-6 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-semibold md:text-lg text-foreground mb-1.5">
+                    <h3 className="text-foreground mb-1.5">
                       {track.title}
                     </h3>
                     {track.description && (
-                      <p className="text-xs leading-6 md:text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-3">
+                      <h6 className="text-muted-foreground line-clamp-2 mb-3">
                         {track.description}
-                      </p>
+                      </h6>
                     )}
                     {track.targetRole && (
                       <Badge variant="secondary" size="sm">
@@ -257,7 +256,7 @@ export default function TraineeTracks() {
                   </div>
                 </div>
                 <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground">
                     عرض المسار
                   </span>
                   <ChevronLeft className="h-4 w-4 text-primary" />

@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import PortalLayout from "@/components/PortalLayout";
 import { Badge } from "@/components/ui/badge";
@@ -74,7 +75,7 @@ const orientationFiles: OrientationFile[] = [
       "سياسة الجودة المعتمدة في نيولاين ومعايير التميز في تقديم الخدمات",
     icon: <Award className="w-8 h-8" />,
     tone: "warning" as const,
-    url: "/manus-storage/quality_policy_92036e0c.pdf",
+    url: "/manus-storage/quality_policy1_bd30602e_03912ea6.pdf",
     category: "الأنظمة والسياسات",
   },
   {
@@ -85,7 +86,7 @@ const orientationFiles: OrientationFile[] = [
       "دليل شامل لسائقي نيولاين يتضمن قواعد السلامة والإجراءات التشغيلية وسياسات الشركة",
     icon: <Car className="w-8 h-8" />,
     tone: "success" as const,
-    url: "/manus-storage/drivers_guide_94658136.pdf",
+    url: "/manus-storage/drivers_guide_77c348a7_a2be8ca4.pdf",
     category: "الأدلة المتخصصة",
   },
   {
@@ -108,16 +109,7 @@ const orientationFiles: OrientationFile[] = [
     url: "/manus-storage/jisr_guide_en_15e1d4c3.pdf",
     category: "منصة جسر",
   },
-  {
-    id: "jisr_guide_ur",
-    title: "شرح برنامج جسر (أردو)",
-    subtitle: "جسر پلیٹ فارم گائیڈ - اردو",
-    description: "منصة جسر للموارد البشرية - دليل الاستخدام باللغة الأردية",
-    icon: <Globe className="w-8 h-8" />,
-    tone: "destructive" as const,
-    url: "/manus-storage/jisr_guide_ur_a0ac4a32.pdf",
-    category: "منصة جسر",
-  },
+  // ملاحظة: بطاقة شرح جسر بالأردو محذوفة لأن ملفها غير موجود في الأرشيف المحلي.
   {
     id: "initiatives_booklet",
     title: "كتيّب مبادرات كفاءة",
@@ -342,40 +334,40 @@ export default function TraineeOrientationPath() {
   return (
     <PortalLayout role="trainee" title="المسار التوجيهي">
       {/* Hero Header */}
-      <div className="bg-gradient-to-l from-blue-700 to-blue-900 py-10 px-6">
+      <div className="mb-5 bg-gradient-to-l from-primary to-primary/70 px-4 py-8 sm:px-6 sm:py-10">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
             <BookOpen className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight md:text-2xl text-white">
+            <h1 className="text-white">
               المسار التوجيهي
             </h1>
-            <p className="text-white/85 text-xs leading-6 md:text-sm">
+            <span className="text-white/85 mt-1 block">
               دليلك الشامل للانطلاق في نيولاين
-            </p>
+            </span>
           </div>
         </div>
-        <p className="text-white/85 text-sm max-w-2xl mt-4">
+        <p className="text-white/85 max-w-2xl mt-4">
           مجموعة من الأدلة والوثائق الرسمية التي تساعدك على فهم بيئة العمل،
           الأنظمة، والسياسات المعتمدة في شركة نيولاين للخدمات اللوجستية.
         </p>
         <div className="flex gap-6 mt-6">
           <div className="text-center">
-            <div className="text-2xl font-bold text-white">
+            <h3 className="text-white">
               {orientationFiles.length}
-            </div>
-            <div className="text-white/80 text-xs">وثيقة</div>
+            </h3>
+            <h6 className="text-white/80">وثيقة</h6>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-white">
+            <h3 className="text-white">
               {categories.length - 1}
-            </div>
-            <div className="text-white/80 text-xs">قسم</div>
+            </h3>
+            <h6 className="text-white/80">قسم</h6>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-white">6</div>
-            <div className="text-white/80 text-xs">إدارة</div>
+            <h3 className="text-white">6</h3>
+            <h6 className="text-white/80">إدارة</h6>
           </div>
         </div>
       </div>
@@ -383,20 +375,20 @@ export default function TraineeOrientationPath() {
       <div>
         {/* تبديل بين الملفات والهيكل */}
         <div className="flex gap-2 mb-6">
-          <button
+          <Button variant="ghost" 
             onClick={() => setActiveTab("files")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all ${activeTab === "files" ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md" : "bg-card text-muted-foreground border border-border hover:border-primary/30 hover:text-primary"}`}
           >
             <FileText className="w-4 h-4" />
             الوثائق والأدلة
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" 
             onClick={() => setActiveTab("org")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all ${activeTab === "org" ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md" : "bg-card text-muted-foreground border border-border hover:border-primary/30 hover:text-primary"}`}
           >
             <Building2 className="w-4 h-4" />
             الهيكل الداخلي
-          </button>
+          </Button>
         </div>
 
         {/* تبويب الملفات */}
@@ -404,7 +396,7 @@ export default function TraineeOrientationPath() {
           <div>
             <div className="flex flex-wrap gap-2 mb-8">
               {categories.map(cat => (
-                <button
+                <Button variant="ghost" 
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${activeCategory === cat ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md" : "bg-card text-muted-foreground border border-border hover:border-primary/30 hover:text-primary"}`}
@@ -418,7 +410,7 @@ export default function TraineeOrientationPath() {
                       )
                     </span>
                   )}
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -446,7 +438,7 @@ export default function TraineeOrientationPath() {
                       )}
                     </div>
                     <div className="mt-3">
-                      <h3 className="text-base font-semibold md:text-lg text-foreground leading-tight">
+                      <h3 className="text-foreground">
                         {file.title}
                       </h3>
                       <p
@@ -458,7 +450,7 @@ export default function TraineeOrientationPath() {
                   </div>
 
                   <div className="p-5">
-                    <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+                    <p className="text-muted-foreground mb-4">
                       {file.description}
                     </p>
                     <div className="flex items-center gap-1 mb-4">
@@ -467,20 +459,20 @@ export default function TraineeOrientationPath() {
                       </Badge>
                     </div>
                     <div className="flex gap-2">
-                      <button
+                      <Button variant="ghost" 
                         onClick={() => setPreviewFile(file)}
                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 ${TONE_STYLES[file.tone].line} ${TONE_STYLES[file.tone].text} font-medium text-sm transition-colors duration-200 hover:bg-muted`}
                       >
                         <Eye className="w-4 h-4" />
                         معاينة
-                      </button>
-                      <button
+                      </Button>
+                      <Button variant="ghost" 
                         onClick={() => window.open(file.url, "_blank")}
                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${TONE_STYLES[file.tone].solid}`}
                       >
                         <Download className="w-4 h-4" />
                         تحميل
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -504,7 +496,7 @@ export default function TraineeOrientationPath() {
               <div className="bg-primary/10 px-5 py-3 flex items-center justify-between border-b border-primary/20">
                 <div className="flex items-center gap-2">
                   <Building2 className="w-5 h-5 text-primary" />
-                  <span className="text-sm font-medium text-foreground">
+                  <span className="font-medium text-foreground">
                     الهيكل التنظيمي الكامل – 2026/2029
                   </span>
                 </div>
@@ -533,8 +525,7 @@ export default function TraineeOrientationPath() {
                 <img
                   src="/assets/org-structure.png"
                   alt="الهيكل التنظيمي لشركة نيولاين"
-                  className="w-full rounded-xl"
-                  style={{ maxHeight: "700px", objectFit: "contain" }}
+                  className="w-full rounded-xl max-h-[700px] object-contain"
                 />
               </div>
             </div>
@@ -546,7 +537,7 @@ export default function TraineeOrientationPath() {
                   key={dept.id}
                   className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden"
                 >
-                  <button
+                  <Button
                     className="w-full flex items-center justify-between p-4 text-start hover:bg-muted transition-colors"
                     onClick={() =>
                       setExpandedDept(expandedDept === dept.id ? null : dept.id)
@@ -560,10 +551,10 @@ export default function TraineeOrientationPath() {
                         {dept.num}
                       </div>
                       <div className="text-start">
-                        <div className="text-sm font-medium text-foreground">
+                        <div className="font-medium text-foreground">
                           {dept.name}
                         </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
+                        <div className="text-muted-foreground mt-0.5">
                           {dept.units.join(" • ")}
                         </div>
                       </div>
@@ -575,7 +566,7 @@ export default function TraineeOrientationPath() {
                         <ChevronDown className="w-5 h-5 text-muted-foreground" />
                       )}
                     </div>
-                  </button>
+                  </Button>
 
                   {expandedDept === dept.id && (
                     <div className="px-4 pb-4 border-t border-border">
@@ -638,7 +629,7 @@ export default function TraineeOrientationPath() {
                 {["سلامة", "جودة", "موثوقية", "ابتكار", "الالتزام"].map(v => (
                   <div
                     key={v}
-                    className="bg-white/20 text-white text-sm font-bold px-4 py-2 rounded-full"
+                    className="bg-white/20 text-white font-bold px-4 py-2 rounded-full"
                   >
                     {v}
                   </div>
@@ -669,7 +660,7 @@ export default function TraineeOrientationPath() {
                   {previewFile.icon}
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold md:text-lg text-foreground">
+                  <h3 className="text-foreground">
                     {previewFile.title}
                   </h3>
                   <p
@@ -680,26 +671,25 @@ export default function TraineeOrientationPath() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button
+                <Button variant="ghost" size="sm" 
                   onClick={() => window.open(previewFile.url, "_blank")}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${TONE_STYLES[previewFile.tone].solid}`}
                 >
                   <Download className="w-3.5 h-3.5" />
                   تحميل
-                </button>
-                <button
+                </Button>
+                <Button variant="ghost" 
                   onClick={() => setPreviewFile(null)}
                   className="w-8 h-8 rounded-lg bg-card/70 hover:bg-card flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </Button>
               </div>
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-y-auto">
               <iframe
                 src={`${previewFile.url}#toolbar=1&navpanes=0&scrollbar=1`}
-                className="w-full h-full"
-                style={{ minHeight: "70vh" }}
+                className="h-[calc(90vh-8rem)] min-h-[420px] w-full"
                 title={previewFile.title}
               />
             </div>

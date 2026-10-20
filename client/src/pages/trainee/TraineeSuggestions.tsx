@@ -1,6 +1,8 @@
 import PortalLayout from "@/components/PortalLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { Lightbulb, Plus, Send } from "lucide-react";
 import { useState } from "react";
@@ -39,20 +41,20 @@ export default function TraineeSuggestions() {
   return (
     <PortalLayout role="trainee" title="شاركنا أفكارك">
       <div className="space-y-6">
-        <div className="bg-card border border-primary/20 rounded-2xl p-5 bg-primary/10 animate-in fade-in slide-in-from-bottom-4">
+        <div className="bg-card border border-primary/20 rounded-2xl p-5 animate-in fade-in slide-in-from-bottom-4">
           <div className="flex items-center gap-3 mb-2">
             <Lightbulb className="h-6 w-6 text-primary" />
-            <h3 className="text-base font-semibold md:text-lg text-foreground">
+            <h3 className="text-foreground">
               اقتراحاتك تُحدث الفرق
             </h3>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground">
             شاركنا أفكارك لتطوير بيئة العمل والتدريب في نيولاين
           </p>
         </div>
 
         <div className="flex justify-end animate-in fade-in slide-in-from-bottom-4">
-          <Button
+          <Button variant="ghost" 
             onClick={() => setShowForm(!showForm)}
             className="gap-2 font-bold"
           >
@@ -73,7 +75,7 @@ export default function TraineeSuggestions() {
               <label className="text-sm font-semibold text-foreground mb-1.5 block">
                 عنوان الاقتراح *
               </label>
-              <input
+              <Input
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 required
@@ -85,7 +87,7 @@ export default function TraineeSuggestions() {
               <label className="text-sm font-semibold text-foreground mb-1.5 block">
                 تفاصيل الاقتراح *
               </label>
-              <textarea
+              <Textarea
                 value={content}
                 onChange={e => setContent(e.target.value)}
                 rows={4}
@@ -98,7 +100,7 @@ export default function TraineeSuggestions() {
               <label className="text-sm font-semibold text-foreground mb-1.5 block">
                 الفئة
               </label>
-              <input
+              <Input
                 value={category}
                 onChange={e => setCategory(e.target.value)}
                 className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -106,7 +108,7 @@ export default function TraineeSuggestions() {
               />
             </div>
             <div className="flex gap-3">
-              <Button
+              <Button variant="ghost" 
                 type="submit"
                 disabled={createMutation.isPending}
                 className="font-bold gap-2"
@@ -134,15 +136,15 @@ export default function TraineeSuggestions() {
               <div key={sug.id} className="card p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
-                    <h4 className="text-sm font-medium text-foreground mb-1">
+                    <h5 className="text-foreground mb-1">
                       {sug.title}
-                    </h4>
-                    <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                    </h5>
+                    <h6 className="text-muted-foreground mb-2 line-clamp-2">
                       {sug.content}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
+                    </h6>
+                    <h6 className="text-muted-foreground">
                       {new Date(sug.createdAt).toLocaleDateString("ar-SA")}
-                    </p>
+                    </h6>
                   </div>
                   <Badge variant={status.variant} className="flex-shrink-0">
                     {status.label}

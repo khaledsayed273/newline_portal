@@ -1,0 +1,2 @@
+ALTER TABLE `enrollments` ADD CONSTRAINT `enrollments_userId_courseId_unique` UNIQUE(`userId`,`courseId`);--> statement-breakpoint
+ALTER TABLE `lesson_watch_progress` ADD CONSTRAINT `lesson_watch_progress_userId_lessonId_unique` UNIQUE(`userId`,`lessonId`);

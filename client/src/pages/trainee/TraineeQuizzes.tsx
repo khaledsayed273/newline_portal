@@ -90,14 +90,14 @@ function QuizRunner({
             <XCircle className="h-12 w-12 text-destructive" />
           )}
         </div>
-        <h2 className="text-2xl font-bold tracking-tight md:text-3xl text-foreground mb-2">
+        <h2 className="text-foreground mb-2">
           {isPassed ? "أحسنت! اجتزت الاختبار" : "لم تجتز الاختبار"}
         </h2>
         <p className="text-muted-foreground mb-6">
           حصلت على{" "}
           <span
             className={cn(
-              "font-bold text-xl",
+              "font-bold",
               isPassed ? "text-success-emphasis" : "text-destructive"
             )}
           >
@@ -117,13 +117,13 @@ function QuizRunner({
                   <XCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
                 )}
                 <div>
-                  <p className="text-sm font-medium text-foreground">
+                  <p className="font-medium text-foreground">
                     {q.question}
                   </p>
                   {!isCorrect && (
-                    <p className="text-xs text-success-emphasis mt-1">
+                    <h6 className="text-success-emphasis mt-1">
                       الإجابة الصحيحة: {q.options[q.correctAnswer]}
-                    </p>
+                    </h6>
                   )}
                 </div>
               </div>
@@ -142,18 +142,18 @@ function QuizRunner({
       {/* رأس الاختبار */}
       <div className="card p-5 mb-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold md:text-xl text-foreground">
+          <h2 className="text-foreground">
             {quiz.title}
           </h2>
           {quiz.timeLimit && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
               <Timer className="h-4 w-4" />
               {quiz.timeLimit} دقيقة
             </div>
           )}
         </div>
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-muted-foreground">
             السؤال {currentQ + 1} من {quiz.questions.length}
           </span>
         </div>
@@ -170,12 +170,12 @@ function QuizRunner({
       {/* السؤال */}
       {question && (
         <div className="card p-6 mb-5">
-          <h3 className="text-foreground mb-6 leading-relaxed">
+          <h3 className="text-foreground mb-6">
             {question.question}
           </h3>
           <div className="space-y-3">
             {question.options.map((option, i) => (
-              <button
+              <Button variant="ghost" 
                 key={i}
                 onClick={() => handleAnswer(i)}
                 className={cn(
@@ -196,7 +196,7 @@ function QuizRunner({
                   {String.fromCharCode(65 + i)}
                 </span>
                 {option}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -214,13 +214,13 @@ function QuizRunner({
           السابق
         </Button>
 
-        <span className="text-xs text-muted-foreground">
+        <span className="text-muted-foreground">
           {answers.filter(a => a !== null).length} / {quiz.questions.length}{" "}
           مجاب
         </span>
 
         {currentQ === quiz.questions.length - 1 ? (
-          <Button
+          <Button variant="ghost" 
             onClick={handleSubmit}
             disabled={answers.some(a => a === null) || submitMutation.isPending}
             className="font-bold gap-2"
@@ -262,13 +262,13 @@ export default function TraineeQuizzes() {
     return (
       <PortalLayout role="trainee" title={activeQuizData.title}>
         <div>
-          <button
+          <Button variant="ghost" 
             onClick={() => setActiveQuiz(null)}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium mb-6"
           >
             <ArrowRight className="h-4 w-4" />
             العودة للاختبارات
-          </button>
+          </Button>
           <QuizRunner
             quiz={{ ...activeQuizData, questions }}
             onFinish={() => setActiveQuiz(null)}
@@ -283,7 +283,7 @@ export default function TraineeQuizzes() {
       <div className="space-y-6">
         {/* فلتر الإدارات */}
         <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-4">
-          <button
+          <Button variant="ghost" 
             onClick={() => setSelectedDept(undefined)}
             className={cn(
               "px-4 py-2 rounded-full text-sm font-semibold transition-all",
@@ -293,9 +293,9 @@ export default function TraineeQuizzes() {
             )}
           >
             الكل
-          </button>
+          </Button>
           {departments?.map(dept => (
-            <button
+            <Button variant="ghost" 
               key={dept.id}
               onClick={() => setSelectedDept(dept.id)}
               className={cn(
@@ -306,7 +306,7 @@ export default function TraineeQuizzes() {
               )}
             >
               {dept.name}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -320,9 +320,9 @@ export default function TraineeQuizzes() {
           <div className="flex flex-col items-center text-center">
             <ClipboardCheck className="h-12 w-12 text-muted-foreground/40 mb-4" />
             <h3 className="text-foreground mb-2">لا توجد اختبارات</h3>
-            <p className="text-xs leading-6 md:text-sm text-muted-foreground">
+            <h6 className="text-muted-foreground">
               لم يتم إضافة اختبارات بعد
-            </p>
+            </h6>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -340,13 +340,13 @@ export default function TraineeQuizzes() {
                     <ClipboardCheck className="h-6 w-6 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-base font-semibold md:text-lg text-foreground mb-1.5">
+                    <h3 className="text-foreground mb-1.5">
                       {quiz.title}
                     </h3>
                     {quiz.description && (
-                      <p className="text-xs leading-6 md:text-sm text-muted-foreground line-clamp-2 mb-3">
+                      <h6 className="text-muted-foreground line-clamp-2 mb-3">
                         {quiz.description}
-                      </p>
+                      </h6>
                     )}
                     <div className="flex flex-wrap gap-2">
                       {quiz.passingScore && (

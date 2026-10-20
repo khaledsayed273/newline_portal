@@ -1,6 +1,15 @@
 import PortalLayout from "@/components/PortalLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import {
@@ -132,12 +141,12 @@ export default function TraineeIncidents() {
               <FileText className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <h3 className="text-base font-semibold md:text-lg text-foreground">
+              <h3 className="text-foreground">
                 ملفات سجلات التعثرات
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <h6 className="text-muted-foreground mt-0.5">
                 5 ملفات حسب الإدارة — اضغط للتحميل
-              </p>
+              </h6>
             </div>
           </div>
           <div className="p-4">
@@ -149,12 +158,13 @@ export default function TraineeIncidents() {
                   window.open(file.fileUrl, "_blank", "noopener,noreferrer");
                 };
                 return (
-                  <button
+                  <Button
+                    variant="ghost"
                     key={file.id}
                     type="button"
                     onClick={handleOpen}
                     className={cn(
-                      "flex items-center gap-3 p-3 rounded-xl border hover:shadow-md transition-all duration-200 group w-full text-start cursor-pointer",
+                      "h-auto w-full cursor-pointer items-center gap-3 rounded-xl border p-3 text-start transition-all duration-200 hover:shadow-md",
                       file.color
                     )}
                   >
@@ -167,12 +177,12 @@ export default function TraineeIncidents() {
                       <FileIcon className="h-5 w-5" />
                     </div>
                     <div className="flex-1 min-w-0 text-start">
-                      <p className="font-semibold text-foreground text-sm leading-snug">
+                      <p className="font-semibold text-foreground">
                         {file.title}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <h6 className="text-muted-foreground mt-0.5">
                         {file.dept}
-                      </p>
+                      </h6>
                       <div className="flex items-center gap-2 mt-1.5">
                         <Badge
                           variant={file.badgeVariant}
@@ -181,7 +191,7 @@ export default function TraineeIncidents() {
                         >
                           {file.fileType}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-muted-foreground">
                           {formatFileSize(file.fileSize)}
                         </span>
                       </div>
@@ -194,17 +204,17 @@ export default function TraineeIncidents() {
                     >
                       <Download className="h-4 w-4" />
                     </div>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
           </div>
         </div>
         <div className="flex items-center justify-between animate-in fade-in slide-in-from-bottom-4">
-          <p className="text-xs leading-6 md:text-sm text-muted-foreground">
+          <h6 className="text-muted-foreground">
             سجّل تعثراتك ومشكلاتك التدريبية
-          </p>
-          <Button
+          </h6>
+          <Button variant="ghost" 
             onClick={() => setShowForm(!showForm)}
             className="gap-2 font-bold"
           >
@@ -218,14 +228,14 @@ export default function TraineeIncidents() {
             onSubmit={handleSubmit}
             className="card p-5 space-y-4 animate-in fade-in slide-in-from-bottom-4"
           >
-            <h3 className="text-base font-semibold md:text-lg text-foreground">
+            <h3 className="text-foreground">
               تسجيل تعثر جديد
             </h3>
             <div>
               <label className="text-sm font-semibold text-foreground mb-1.5 block">
                 العنوان *
               </label>
-              <input
+              <Input
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 required
@@ -237,7 +247,7 @@ export default function TraineeIncidents() {
               <label className="text-sm font-semibold text-foreground mb-1.5 block">
                 التفاصيل
               </label>
-              <textarea
+              <Textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 rows={3}
@@ -245,12 +255,12 @@ export default function TraineeIncidents() {
                 placeholder="اشرح التعثر بالتفصيل..."
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2">
               <div>
                 <label className="text-sm font-semibold text-foreground mb-1.5 block">
                   الفئة
                 </label>
-                <input
+                <Input
                   value={category}
                   onChange={e => setCategory(e.target.value)}
                   className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -261,15 +271,16 @@ export default function TraineeIncidents() {
                 <label className="text-sm font-semibold text-foreground mb-1.5 block">
                   الأولوية
                 </label>
-                <select
-                  value={priority}
-                  onChange={e => setPriority(e.target.value as any)}
-                  className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                >
-                  <option value="low">منخفض</option>
-                  <option value="medium">متوسط</option>
-                  <option value="high">عالي</option>
-                </select>
+                <Select value={priority} onValueChange={v => setPriority(v as any)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="الأولوية" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">منخفض</SelectItem>
+                    <SelectItem value="medium">متوسط</SelectItem>
+                    <SelectItem value="high">عالي</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="flex gap-3">
@@ -310,9 +321,9 @@ export default function TraineeIncidents() {
               return (
                 <div key={incident.id} className="card p-4">
                   <div className="flex items-start justify-between gap-3 mb-2">
-                    <h4 className="text-sm font-medium text-foreground">
+                    <h5 className="text-foreground">
                       {incident.title}
-                    </h4>
+                    </h5>
                     <div className="flex gap-2 flex-shrink-0">
                       <Badge variant={priority.variant} size="sm">
                         {priority.label}
@@ -323,13 +334,13 @@ export default function TraineeIncidents() {
                     </div>
                   </div>
                   {incident.description && (
-                    <p className="text-xs leading-6 md:text-sm text-muted-foreground mb-2">
+                    <h6 className="text-muted-foreground mb-2">
                       {incident.description}
-                    </p>
+                    </h6>
                   )}
-                  <p className="text-xs text-muted-foreground">
+                  <h6 className="text-muted-foreground">
                     {new Date(incident.createdAt).toLocaleDateString("ar-SA")}
-                  </p>
+                  </h6>
                 </div>
               );
             })}

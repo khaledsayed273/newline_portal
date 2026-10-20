@@ -1,6 +1,16 @@
+import { Button } from "@/components/ui/button";
 import PortalLayout from "@/components/PortalLayout";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MessageCircle, Send, CheckCircle, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -42,7 +52,7 @@ export default function TraineeConsultations() {
       subject: subject.trim(),
       message: message.trim(),
       userName: userName.trim() || user?.name || "متدرب",
-      userEmail: user?.email ?? undefined,
+
       department: department || undefined,
     });
   };
@@ -64,12 +74,12 @@ export default function TraineeConsultations() {
               <MessageCircle size={20} className="text-warning-emphasis" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold md:text-xl text-foreground">
+              <h2 className="text-foreground">
                 استشاراتك التدريبية
               </h2>
-              <p className="text-xs leading-6 md:text-sm text-muted-foreground">
+              <h6 className="text-muted-foreground">
                 أرسل استشارتك وسيتم الرد عليها في أقرب وقت
-              </p>
+              </h6>
             </div>
           </div>
         </div>
@@ -82,17 +92,17 @@ export default function TraineeConsultations() {
             </div>
             <div>
               <h3 className="text-foreground mb-2">تم إرسال استفسارك بنجاح!</h3>
-              <p className="text-xs leading-6 md:text-sm text-muted-foreground">
+              <h6 className="text-muted-foreground">
                 سيتم مراجعة استشارتك والرد عليها في أقرب وقت ممكن على البريد
                 الإلكتروني
-              </p>
+              </h6>
             </div>
-            <button
+            <Button
               onClick={handleReset}
               className="mt-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-success/15 text-success-emphasis border border-success/30 hover:bg-success/20"
             >
               إرسال استشارة أخرى
-            </button>
+            </Button>
           </div>
         ) : (
           /* نموذج الاستشارة */
@@ -100,7 +110,7 @@ export default function TraineeConsultations() {
             {/* الاسم */}
             <div>
               <label className="block text-foreground mb-2">الاسم</label>
-              <input
+              <Input
                 value={userName}
                 onChange={e => setUserName(e.target.value)}
                 placeholder={user?.name ?? "أدخل اسمك"}
@@ -116,18 +126,22 @@ export default function TraineeConsultations() {
                   (اختياري)
                 </span>
               </label>
-              <select
-                value={department}
-                onChange={e => setDepartment(e.target.value)}
-                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all bg-muted border border-border text-foreground focus:ring-2 focus:ring-ring"
+              <Select
+                value={department || "__none__"}
+                onValueChange={v => setDepartment(v === "__none__" ? "" : v)}
               >
-                <option value="">اختر الإدارة...</option>
-                {DEPARTMENTS.map(d => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="اختر الإدارة..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">اختر الإدارة...</SelectItem>
+                  {DEPARTMENTS.map(d => (
+                    <SelectItem key={d} value={d}>
+                      {d}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* موضوع الاستشارة */}
@@ -135,7 +149,7 @@ export default function TraineeConsultations() {
               <label className="block text-foreground mb-2">
                 موضوع الاستشارة *
               </label>
-              <input
+              <Input
                 value={subject}
                 onChange={e => setSubject(e.target.value)}
                 required
@@ -149,7 +163,7 @@ export default function TraineeConsultations() {
               <label className="block text-foreground mb-2">
                 تفاصيل الاستشارة *
               </label>
-              <textarea
+              <Textarea
                 value={message}
                 onChange={e => setMessage(e.target.value)}
                 required
@@ -157,13 +171,13 @@ export default function TraineeConsultations() {
                 placeholder="اشرح استشارتك بالتفصيل حتى نتمكن من مساعدتك بشكل أفضل..."
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all resize-none bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <h6 className="text-muted-foreground mt-1">
                 {message.length} حرف
-              </p>
+              </h6>
             </div>
 
             {/* زر الإرسال */}
-            <button
+            <Button variant="ghost" 
               type="submit"
               disabled={
                 createMutation.isPending ||
@@ -183,7 +197,7 @@ export default function TraineeConsultations() {
                   إرسال الاستشارة
                 </>
               )}
-            </button>
+            </Button>
           </form>
         )}
       </div>

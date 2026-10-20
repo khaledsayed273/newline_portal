@@ -1,116 +1,102 @@
 import PortalLayout from "@/components/PortalLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Edit2, GraduationCap, Plus, Trash2 } from "lucide-react";
+import { Edit2, GraduationCap, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-function TrackForm({ initial, departments, onSave, onCancel, isLoading }: any) {
-  const [title, setTitle] = useState(initial?.title ?? "");
+function PathForm({ initial, departments, onSave, onCancel, isLoading }: any) {
+  const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [departmentId, setDepartmentId] = useState(initial?.departmentId ?? "");
-  const [targetRole, setTargetRole] = useState(initial?.targetRole ?? "");
-  const [isPublished, setIsPublished] = useState(initial?.isPublished ?? false);
+  const [isPublished, setIsPublished] = useState(initial?.isPublished ?? true);
   const [order, setOrder] = useState(initial?.order ?? 0);
 
   return (
     <form
       onSubmit={e => {
         e.preventDefault();
+        if (!departmentId) return;
         onSave({
-          title,
+          name,
           description: description || undefined,
-          departmentId: departmentId ? Number(departmentId) : undefined,
-          targetRole: targetRole || undefined,
+          departmentId: Number(departmentId),
           isPublished,
           order: Number(order),
         });
       }}
-      className="bg-card border border-border rounded-2xl p-5 space-y-4"
+      className="space-y-4 rounded-2xl border border-border bg-card p-5"
     >
       <h3 className="text-foreground">
         {initial ? "تعديل المسار" : "إضافة مسار جديد"}
       </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">
+          <label className="mb-1.5 block text-sm font-semibold text-foreground">
             اسم المسار *
           </label>
-          <input
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            required
-            className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-            placeholder="اسم المسار التدريبي"
-          />
+          <Input value={name} onChange={e => setName(e.target.value)} required />
         </div>
         <div className="sm:col-span-2">
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">
+          <label className="mb-1.5 block text-sm font-semibold text-foreground">
             الوصف
           </label>
-          <textarea
+          <Textarea
             value={description}
             onChange={e => setDescription(e.target.value)}
             rows={2}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
           />
         </div>
         <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">
-            الإدارة
+          <label className="mb-1.5 block text-sm font-semibold text-foreground">
+            الإدارة *
           </label>
-          <select
-            value={departmentId}
-            onChange={e => setDepartmentId(e.target.value)}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          <Select
+            value={departmentId ? String(departmentId) : ""}
+            onValueChange={setDepartmentId}
           >
-            <option value="">-- اختر الإدارة --</option>
-            {departments.map((d: any) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="اختر الإدارة" />
+            </SelectTrigger>
+            <SelectContent>
+              {departments.map((department: any) => (
+                <SelectItem key={department.id} value={String(department.id)}>
+                  {department.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">
-            الدور المستهدف
-          </label>
-          <input
-            value={targetRole}
-            onChange={e => setTargetRole(e.target.value)}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-            placeholder="مثال: موظف جديد، مشرف..."
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">
+          <label className="mb-1.5 block text-sm font-semibold text-foreground">
             الترتيب
           </label>
-          <input
+          <Input
             type="number"
+            min={0}
             value={order}
             onChange={e => setOrder(e.target.value)}
-            min={0}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
-        <div className="flex items-center gap-3">
-          <input
+        <label className="flex items-center gap-3 text-sm font-semibold text-foreground sm:col-span-2">
+          <Input
             type="checkbox"
-            id="pub-track"
             checked={isPublished}
             onChange={e => setIsPublished(e.target.checked)}
-            className="w-4 h-4 accent-primary"
+            className="size-4"
           />
-          <label
-            htmlFor="pub-track"
-            className="text-sm font-semibold text-foreground cursor-pointer"
-          >
-            نشر المسار
-          </label>
-        </div>
+          نشر المسار للمتدربين
+        </label>
       </div>
       <div className="flex gap-3">
         <Button type="submit" disabled={isLoading} className="font-bold">
@@ -124,31 +110,139 @@ function TrackForm({ initial, departments, onSave, onCancel, isLoading }: any) {
   );
 }
 
+function PathCourses({
+  pathId,
+  departmentId,
+  courses,
+}: {
+  pathId: number;
+  departmentId: number;
+  courses: any[];
+}) {
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const utils = trpc.useUtils();
+  const { data, isLoading } = trpc.coursePaths.withCourses.useQuery({ pathId });
+  const addMutation = trpc.coursePaths.addCourse.useMutation({
+    onSuccess: async () => {
+      await utils.coursePaths.withCourses.invalidate({ pathId });
+      setSelectedCourse("");
+      toast.success("تمت إضافة الدورة للمسار");
+    },
+  });
+  const removeMutation = trpc.coursePaths.removeCourse.useMutation({
+    onSuccess: () => {
+      utils.coursePaths.withCourses.invalidate({ pathId });
+      toast.success("تم حذف الدورة من المسار");
+    },
+  });
+
+  const linkedCourses = (data?.courses ?? []).filter(
+    (course: any) => course.courseDepartmentId === departmentId
+  );
+  const linkedIds = new Set(linkedCourses.map((course: any) => course.courseId));
+  const departmentCourses = courses.filter(
+    course => course.departmentId === departmentId
+  );
+  const availableCourses = departmentCourses.filter(
+    course => !linkedIds.has(course.id)
+  );
+
+  return (
+    <div className="border-t border-border bg-muted/20 px-4 py-4">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h5 className="text-foreground">دورات المسار ({linkedCourses.length})</h5>
+        <div className="flex gap-2">
+          <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+            <SelectTrigger className="min-w-52 bg-card">
+              <SelectValue placeholder="اختر دورة لإضافتها" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableCourses.map(course => (
+                <SelectItem key={course.id} value={String(course.id)}>
+                  {course.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            type="button"
+            size="sm"
+            disabled={!selectedCourse || addMutation.isPending}
+            onClick={() =>
+              addMutation.mutate({
+                pathId,
+                courseId: Number(selectedCourse),
+                order: linkedCourses.length,
+              })
+            }
+          >
+            إضافة
+          </Button>
+        </div>
+      </div>
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">جاري تحميل الدورات...</p>
+      ) : linkedCourses.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          لم تتم إضافة دورات من هذه الإدارة لهذا المسار.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {linkedCourses.map((course: any) => (
+            <div
+              key={course.courseId}
+              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2"
+            >
+              <span className="min-w-0 truncate text-sm text-foreground">
+                {course.courseTitle}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-label={`حذف ${course.courseTitle}`}
+                disabled={removeMutation.isPending}
+                onClick={() =>
+                  removeMutation.mutate({ pathId, courseId: course.courseId })
+                }
+                className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminTracks() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-
-  const { data: tracks, isLoading } = trpc.tracks.listAll.useQuery();
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const { data: paths, isLoading } = trpc.coursePaths.listAll.useQuery();
   const { data: departments } = trpc.departments.list.useQuery();
+  const { data: courses } = trpc.courses.listAll.useQuery();
   const utils = trpc.useUtils();
 
-  const createMutation = trpc.tracks.create.useMutation({
+  const createMutation = trpc.coursePaths.create.useMutation({
     onSuccess: () => {
-      utils.tracks.listAll.invalidate();
+      utils.coursePaths.listAll.invalidate();
       setShowForm(false);
       toast.success("تم إضافة المسار");
     },
   });
-  const updateMutation = trpc.tracks.update.useMutation({
+  const updateMutation = trpc.coursePaths.update.useMutation({
     onSuccess: () => {
-      utils.tracks.listAll.invalidate();
+      utils.coursePaths.listAll.invalidate();
       setEditingId(null);
       toast.success("تم تحديث المسار");
     },
   });
-  const deleteMutation = trpc.tracks.delete.useMutation({
+  const deleteMutation = trpc.coursePaths.delete.useMutation({
     onSuccess: () => {
-      utils.tracks.listAll.invalidate();
+      utils.coursePaths.listAll.invalidate();
       toast.success("تم حذف المسار");
     },
   });
@@ -156,21 +250,20 @@ export default function AdminTracks() {
   return (
     <PortalLayout role="admin" title="إدارة المسارات">
       <div className="space-y-5">
-        <div className="flex items-center justify-between animate-in fade-in slide-in-from-bottom-4">
-          <p className="text-xs leading-6 md:text-sm text-muted-foreground">
-            {tracks?.length ?? 0} مسار
-          </p>
+        <div className="flex items-center justify-between gap-3">
+          <h6 className="text-muted-foreground">{paths?.length ?? 0} مسار</h6>
           <Button
-            onClick={() => setShowForm(!showForm)}
+            variant="ghost"
+            onClick={() => setShowForm(value => !value)}
             className="gap-2 font-bold"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="size-4" />
             إضافة مسار
           </Button>
         </div>
 
         {showForm && (
-          <TrackForm
+          <PathForm
             departments={departments ?? []}
             onSave={(data: any) => createMutation.mutate(data)}
             onCancel={() => setShowForm(false)}
@@ -180,69 +273,87 @@ export default function AdminTracks() {
 
         {isLoading ? (
           <div className="space-y-3">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="card h-16 animate-pulse" />
+            {[1, 2, 3].map(item => (
+              <div key={item} className="card h-20 animate-pulse" />
             ))}
           </div>
-        ) : tracks?.length === 0 ? (
-          <div className="flex flex-col items-center text-center py-16">
-            <GraduationCap className="h-12 w-12 text-muted-foreground/40 mb-4" />
-            <h3 className="text-foreground mb-2">لا توجد مسارات</h3>
+        ) : paths?.length === 0 ? (
+          <div className="flex flex-col items-center py-16 text-center">
+            <GraduationCap className="mb-4 size-12 text-muted-foreground/40" />
+            <h3 className="mb-2 text-foreground">لا توجد مسارات</h3>
+            <p className="text-sm text-muted-foreground">
+              أضف مسارًا ثم اربط به الدورات ليظهر للمتدربين.
+            </p>
           </div>
         ) : (
-          <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4">
-            {tracks?.map(track =>
-              editingId === track.id ? (
-                <TrackForm
-                  key={track.id}
-                  initial={track}
+          <div className="space-y-3">
+            {paths?.map(path =>
+              editingId === path.id ? (
+                <PathForm
+                  key={path.id}
+                  initial={path}
                   departments={departments ?? []}
                   onSave={(data: any) =>
-                    updateMutation.mutate({ id: track.id, ...data })
+                    updateMutation.mutate({ id: path.id, ...data })
                   }
                   onCancel={() => setEditingId(null)}
                   isLoading={updateMutation.isPending}
                 />
               ) : (
-                <div
-                  key={track.id}
-                  className="card p-4 flex items-center gap-3"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-                    <GraduationCap className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-foreground">{track.title}</h4>
-                      <Badge
-                        variant={track.isPublished ? "success" : "secondary"}
-                      >
-                        {track.isPublished ? "منشور" : "مسودة"}
-                      </Badge>
+                <div key={path.id} className="card overflow-hidden">
+                  <div className="flex flex-wrap items-center gap-3 p-4">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
+                      <GraduationCap className="size-5 text-primary" />
                     </div>
-                    {track.targetRole && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {track.targetRole}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="text-foreground">{path.name}</h4>
+                        <Badge variant={path.isPublished ? "success" : "secondary"}>
+                          {path.isPublished ? "منشور" : "مسودة"}
+                        </Badge>
+                      </div>
+                      <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                        {departments?.find((item: any) => item.id === path.departmentId)?.name ??
+                          "بدون إدارة"}
                       </p>
-                    )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setExpandedId(value => (value === path.id ? null : path.id))
+                        }
+                        className="font-semibold"
+                      >
+                        {expandedId === path.id ? "إخفاء الدورات" : "إدارة الدورات"}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingId(path.id)}
+                        aria-label={`تعديل ${path.name}`}
+                      >
+                        <Edit2 className="size-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteMutation.mutate({ id: path.id })}
+                        aria-label={`حذف ${path.name}`}
+                        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setEditingId(track.id)}
-                      className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                    >
-                      <Edit2 className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm("حذف المسار؟"))
-                          deleteMutation.mutate({ id: track.id });
-                      }}
-                      className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                  {expandedId === path.id && (
+                    <PathCourses
+                      pathId={path.id}
+                      departmentId={path.departmentId}
+                      courses={courses ?? []}
+                    />
+                  )}
                 </div>
               )
             )}

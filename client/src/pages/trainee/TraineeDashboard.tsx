@@ -14,10 +14,10 @@ import {
   Map,
   Send,
   CheckCircle2,
-  Clock,
   ArrowLeft,
 } from "lucide-react";
 import { Link } from "wouter";
+import type { CSSProperties } from "react";
 
 const SERVICES = [
   {
@@ -137,24 +137,10 @@ export default function TraineeDashboard() {
     departmentId: undefined,
   });
 
-  // المعرف الفريد للمتدرب
-  const userIdentifier = (() => {
-    let id = localStorage.getItem("userIdentifier");
-    if (!id) {
-      id = `user_${Math.random().toString(36).substr(2, 12)}`;
-      localStorage.setItem("userIdentifier", id);
-    }
-    return id;
-  })();
-
-  const { data: traineeStats } = trpc.traineeStats.get.useQuery({
-    userIdentifier,
+  const { data: traineeStats } = trpc.traineeStats.get.useQuery(undefined, {
+    enabled: Boolean(user),
   });
 
-  const completed = enrollments?.filter(e => e.isCompleted).length ?? 0;
-  const inProgress =
-    enrollments?.filter(e => !e.isCompleted && (e.progress ?? 0) > 0).length ??
-    0;
   const courses = (Array.isArray(coursesRaw) ? coursesRaw : []).slice(0, 4);
 
   const points = traineeStats?.points ?? 0;
@@ -173,34 +159,20 @@ export default function TraineeDashboard() {
     <PortalLayout role="trainee" title="لوحتي">
       <div className="space-y-6">
         {/* ===== بطاقة الترحيب ===== */}
-        <div
-          className="relative overflow-hidden rounded-xl p-6"
-          style={{
-            background:
-              "linear-gradient(135deg, rgba(29,78,216,0.28) 0%, rgba(37,99,235,0.14) 50%, rgba(10,22,40,0.70) 100%)",
-            border: "1px solid rgba(37,99,235,0.22)",
-          }}
-        >
-          <div
-            className="absolute top-0 left-0 w-56 h-56 rounded-full pointer-events-none"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)",
-              transform: "translate(-30%,-30%)",
-            }}
-          />
+        <div className="welcome-hero relative overflow-hidden rounded-xl p-6">
+          <div className="hero-glow absolute top-0 left-0 w-56 h-56 rounded-full pointer-events-none" />
           <div className="relative">
-            <p className="text-primary text-sm font-medium mb-1">
+            <p className="text-primary font-medium mb-1">
               {getGreeting()}؟
             </p>
             <h2 className="text-white mb-1">{user?.name || "المتدرب"} 👋</h2>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-muted-foreground">
               مرحباً بك في بوابة التدريب — ابدأ رحلتك التعليمية اليوم
             </p>
           </div>
 
           {/*الإحصائيات الشخصية*/}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
+          <div className="mt-5 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:grid-cols-4">
             {[
               {
                 label: "نقاطي",
@@ -240,38 +212,25 @@ export default function TraineeDashboard() {
                 className="card flex flex-col items-center justify-center gap-1.5 p-4"
               >
                 <div
-                  className="rounded-md bg-muted flex items-center justify-center"
-                  style={{
-                    width: "40px",
-                    height: "40px",
-                    background: s.bg,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
+                  className="size-10 rounded-md flex items-center justify-center"
+                  style={{ background: s.bg }}
                 >
                   <s.icon size={20} style={{ color: s.color }} />
                 </div>
-                <span
-                  className="text-xl font-bold tracking-tight md:text-2xl text-foreground"
-                  style={{
-                    lineHeight: 1.1,
-                    letterSpacing: "-0.5px",
-                  }}
-                >
+                <h2 className="text-foreground">
                   {s.value}
                   {s.suffix}
-                </span>
-                <span className="text-xs text-muted-foreground font-bold">
+                </h2>
+                <h6 className="text-muted-foreground text-center">
                   {s.label}
-                </span>
+                </h6>
               </div>
             ))}
           </div>
 
           {/* شريط التقدم */}
           <div className="mt-4">
-            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+            <div className="flex justify-between text-muted-foreground mb-1">
               <span>نسبة إنجاز الدورات</span>
               <span>{completionRate}%</span>
             </div>
@@ -281,50 +240,44 @@ export default function TraineeDashboard() {
                 style={{ width: `${completionRate}%` }}
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <h6 className="text-muted-foreground mt-1">
               كل دورة تكملها = نقطة + 5% حوافز
-            </p>
+            </h6>
           </div>
         </div>
 
         {/* ===== شبكة الخدمات ===== */}
         <div>
-          <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+          <h5 className="text-muted-foreground mb-3 flex items-center gap-2">
             <div className="w-1 h-4 rounded-full bg-primary" />
             الخدمات المتاحة
-          </h3>
+          </h5>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {SERVICES.map(
               ({ href, label, desc, icon: Icon, color, bg, border }) => (
-                <Link key={href} href={href}>
+                <Link
+                  key={href}
+                  href={href}
+                  className="block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
                   <div
-                    className="flex items-start gap-3.5 p-4 rounded-xl cursor-pointer transition-all duration-200 h-full"
-                    style={{ background: bg, border: `1px solid ${border}` }}
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLDivElement).style.transform =
-                        "translateY(-2px)";
-                      (e.currentTarget as HTMLDivElement).style.boxShadow =
-                        `0 8px 24px ${color}20`;
-                      (e.currentTarget as HTMLDivElement).style.borderColor =
-                        `${color}50`;
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLDivElement).style.transform =
-                        "translateY(0)";
-                      (e.currentTarget as HTMLDivElement).style.boxShadow =
-                        "none";
-                      (e.currentTarget as HTMLDivElement).style.borderColor =
-                        border;
-                    }}
+                    className="flex h-full items-start gap-3.5 rounded-xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--svc)] hover:shadow-[0_8px_24px_color-mix(in_srgb,var(--svc)_25%,transparent)]"
+                    style={
+                      {
+                        "--svc": color,
+                        background: bg,
+                        border: `1px solid ${border}`,
+                      } as CSSProperties
+                    }
                   >
                     {/*النص على اليسار*/}
                     <div className="flex-1 min-w-0 text-start">
-                      <p className="text-sm font-medium text-card-foreground mb-0.5 leading-tight">
+                      <p className="font-medium text-card-foreground mb-0.5">
                         {label}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-snug">
+                      <h6 className="text-muted-foreground">
                         {desc}
-                      </p>
+                      </h6>
                     </div>
                     {/*الأيقونة على اليمين*/}
                     <div
@@ -347,29 +300,33 @@ export default function TraineeDashboard() {
         {courses.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <h5 className="text-muted-foreground flex items-center gap-2">
                 <div className="w-1 h-4 rounded-full bg-primary" />
                 أحدث الدورات المتاحة
-              </h3>
+              </h5>
               <Link href="/courses">
-                <span className="text-xs text-muted-foreground text-primary hover:text-primary/80 transition-colors flex items-center gap-1 cursor-pointer">
+                <span className="text-primary hover:text-primary/80 transition-colors flex items-center gap-1 cursor-pointer">
                   عرض الكل <ArrowLeft size={12} />
                 </span>
               </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {courses.map((course: any) => (
-                <Link key={course.id} href={`/courses/${course.id}`}>
-                  <div className="card p-4 cursor-pointer transition-all duration-200 hover:border-primary/30 hover:shadow-md">
+                <Link
+                  key={course.id}
+                  href={`/courses/${course.id}`}
+                  className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <div className="card cursor-pointer p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-md">
                     <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center mb-3">
                       <BookOpen size={15} className="text-primary" />
                     </div>
-                    <p className="text-sm font-medium text-card-foreground mb-1 leading-tight line-clamp-2">
+                    <p className="font-medium text-card-foreground mb-1 line-clamp-2">
                       {course.title}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <h6 className="text-muted-foreground">
                       {course.department || "عام"}
-                    </p>
+                    </h6>
                   </div>
                 </Link>
               ))}

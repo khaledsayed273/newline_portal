@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import PortalLayout from "@/components/PortalLayout";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -138,7 +139,7 @@ export default function TraineeBriefFiles() {
       <div className="space-y-5">
         {/* فلتر الإدارات */}
         <div className="flex flex-wrap gap-2">
-          <button
+          <Button variant="ghost" 
             onClick={() => setSelectedDept(undefined)}
             className={cn(
               "px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200",
@@ -148,10 +149,10 @@ export default function TraineeBriefFiles() {
             )}
           >
             الكل
-          </button>
+          </Button>
           {departments?.map(dept => {
             return (
-              <button
+              <Button variant="ghost" 
                 key={dept.id}
                 onClick={() =>
                   setSelectedDept(
@@ -166,7 +167,7 @@ export default function TraineeBriefFiles() {
                 )}
               >
                 {dept.name}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -189,9 +190,9 @@ export default function TraineeBriefFiles() {
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <FileText className="h-14 w-14 text-muted-foreground/30 mb-4" />
             <h3 className="text-foreground mb-2">لا توجد ملفات</h3>
-            <p className="text-xs leading-6 md:text-sm text-muted-foreground">
+            <h6 className="text-muted-foreground">
               لم يتم إضافة ملفات مختصرة بعد
-            </p>
+            </h6>
           </div>
         ) : (
           <div className="space-y-4">
@@ -206,9 +207,10 @@ export default function TraineeBriefFiles() {
                   style={{ animationDelay: `${sectionIdx * 0.05}s` }}
                 >
                   {/* رأس القسم */}
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={() => toggleDept(dept.id)}
-                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/20 transition-colors text-start"
+                    className="h-auto w-full justify-between rounded-none px-5 py-4 text-start transition-colors hover:bg-muted/20"
                   >
                     <div className="flex items-center gap-3">
                       <div
@@ -220,12 +222,12 @@ export default function TraineeBriefFiles() {
                         <FileText className="h-4 w-4" />
                       </div>
                       <div className="text-start">
-                        <h3 className="text-base font-semibold md:text-lg text-foreground">
+                        <h3 className="text-foreground">
                           {dept.name}
                         </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <h6 className="text-muted-foreground mt-0.5">
                           {files.length} ملف
-                        </p>
+                        </h6>
                       </div>
                     </div>
                     <div className="text-muted-foreground">
@@ -235,7 +237,7 @@ export default function TraineeBriefFiles() {
                         <ChevronDown className="h-5 w-5" />
                       )}
                     </div>
-                  </button>
+                  </Button>
 
                   {/* قائمة الملفات */}
                   {isExpanded && (
@@ -268,7 +270,7 @@ export default function TraineeBriefFiles() {
 
                               {/* معلومات الملف */}
                               <div className="flex-1 min-w-0 text-start">
-                                <p className="font-semibold text-foreground text-sm leading-snug line-clamp-2">
+                                <p className="font-semibold text-foreground line-clamp-2">
                                   {file.title}
                                 </p>
                                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -282,7 +284,7 @@ export default function TraineeBriefFiles() {
                                     </Badge>
                                   )}
                                   {sizeLabel && (
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="text-muted-foreground">
                                       {sizeLabel}
                                     </span>
                                   )}
@@ -325,12 +327,12 @@ export default function TraineeBriefFiles() {
                     <File className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div className="text-start">
-                    <h3 className="text-base font-semibold md:text-lg text-foreground">
+                    <h3 className="text-foreground">
                       ملفات عامة
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <h6 className="text-muted-foreground mt-0.5">
                       {unassignedFiles.length} ملف
-                    </p>
+                    </h6>
                   </div>
                 </div>
                 <div className="p-5 bg-muted/50">
@@ -346,7 +348,7 @@ export default function TraineeBriefFiles() {
                             <FileIcon className="h-5 w-5 text-muted-foreground" />
                           </div>
                           <div className="flex-1 min-w-0 text-start">
-                            <p className="font-semibold text-foreground text-sm line-clamp-2">
+                            <p className="font-semibold text-foreground line-clamp-2">
                               {file.title}
                             </p>
                             {file.fileType && (

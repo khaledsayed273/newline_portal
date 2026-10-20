@@ -2,13 +2,14 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
+import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
 // الصفحة الرئيسية (شبكة الخدمات)
 import Home from "./pages/Home";
-
-//صفحات المتدرب (redirect للصفحة الرئيسية)
+import Login from "./pages/Login";
 import TraineeDashboard from "./pages/trainee/TraineeDashboard";
 import TraineeCourses from "./pages/trainee/TraineeCourses";
 import TraineeCourseDetail from "./pages/trainee/TraineeCourseDetail";
@@ -40,34 +41,31 @@ import AdminIncidents from "./pages/admin/AdminIncidents";
 import AdminSuggestions from "./pages/admin/AdminSuggestions";
 
 function Router() {
+  const { user, loading } = useAuth({
+    redirectOnUnauthenticated: true,
+    redirectPath: "/login",
+  });
+  const [location] = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <span className="text-muted-foreground">جارٍ التحميل...</span>
+      </div>
+    );
+  }
+
+  if (!user && location !== "/login") {
+    return null;
+  }
+
   return (
     <Switch>
       {/* الصفحة الرئيسية: تصميم الدورات التدريبية */}
-      <Route path="/" component={TraineeCourses} />
-
-      {/*إعادة توجيه مسارات trainee/ القديمة*/}
-      <Route path="/trainee/courses">
-        {() => {
-          window.location.replace("/courses");
-          return null;
-        }}
-      </Route>
-      <Route path="/trainee/courses/:id">
-        {(params: any) => {
-          window.location.replace(`/courses/${params.id}`);
-          return null;
-        }}
-      </Route>
-      <Route path="/trainee/dashboard">
-        {() => {
-          window.location.replace("/dashboard");
-          return null;
-        }}
-      </Route>
-
+      <Route path="/" component={Home} />
+      <Route path="/login" component={Login} />
       {/* صفحات المتدرب */}
       <Route path="/dashboard" component={TraineeDashboard} />
-      <Route path="/home" component={Home} />
       <Route path="/quick-courses" component={TraineeBriefFiles} />
       <Route path="/general-culture" component={TraineeGeneralCulture} />
       <Route path="/consultations" component={TraineeConsultations} />

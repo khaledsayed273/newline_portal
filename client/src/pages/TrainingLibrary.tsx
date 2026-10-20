@@ -72,7 +72,7 @@ export default function TrainingLibrary() {
           مصادر تدريبية عربية مجانية مصنفة من أفضل المنصات
         </p>
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+          <div className="mt-6 grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 md:grid-cols-4">
             {[
               { label: "إجمالي المصادر", value: stats.total, icon: "📚" },
               { label: "مجانية", value: stats.freeCount, icon: "🎁" },
@@ -81,10 +81,10 @@ export default function TrainingLibrary() {
             ].map(s => (
               <div key={s.label} className="card p-3 text-center">
                 <div className="text-2xl">{s.icon}</div>
-                <div className="text-2xl font-bold text-card-foreground">
+                <h2 className="text-card-foreground">
                   {s.value}
-                </div>
-                <div className="text-xs text-muted-foreground">{s.label}</div>
+                </h2>
+                <h6 className="text-muted-foreground">{s.label}</h6>
               </div>
             ))}
           </div>
@@ -143,7 +143,7 @@ export default function TrainingLibrary() {
             </Button>
           )}
           {data && (
-            <span className="text-sm text-muted-foreground ms-auto">
+            <span className="text-muted-foreground ms-auto">
               {data.total}مصدر
             </span>
           )}
@@ -152,7 +152,7 @@ export default function TrainingLibrary() {
         {/* Category Quick Filters */}
         <div className="flex flex-wrap gap-2 mb-6">
           {categories.slice(0, 10).map(c => (
-            <button
+            <Button variant="ghost" 
               key={c.category}
               onClick={() =>
                 handleCategoryChange(
@@ -162,7 +162,7 @@ export default function TrainingLibrary() {
               className={`px-3 py-1 rounded-full text-sm transition-colors ${selectedCategory === c.category ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted border border-border"}`}
             >
               {c.category} <span className="opacity-70">({c.count})</span>
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -214,9 +214,9 @@ export default function TrainingLibrary() {
                     </CardHeader>
                     <CardContent className="pt-0">
                       {item.description && (
-                        <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                        <h6 className="text-muted-foreground mb-3 line-clamp-2">
                           {item.description}
-                        </p>
+                        </h6>
                       )}
                       <div className="flex flex-wrap gap-1 mb-3">
                         <Badge variant={levelInfo.variant}>
@@ -243,7 +243,7 @@ export default function TrainingLibrary() {
                         </div>
                       )}
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-primary font-medium">
+                        <span className="text-primary font-medium">
                           🔗 {item.source}
                         </span>
                         <a
@@ -271,7 +271,7 @@ export default function TrainingLibrary() {
                 >
                   السابق
                 </Button>
-                <span className="flex items-center px-4 text-sm text-muted-foreground">
+                <span className="flex items-center px-4 text-muted-foreground">
                   صفحة {page} من {data.totalPages}
                 </span>
                 <Button
