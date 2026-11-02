@@ -410,6 +410,7 @@ export async function updateEnrollmentProgress(
     .where(
       and(eq(enrollments.userId, userId), eq(enrollments.courseId, courseId))
     );
+  await recalcPathProgressForUser(userId, courseId);
 }
 
 // ========== مزامنة تقدّم وإتمام الدورة في جدول التسجيلات ==========
@@ -451,8 +452,8 @@ export async function syncCourseEnrollmentCompletion(
           WHERE userId = ${userId} AND courseId = ${courseId}`
     );
     const affected = Number(
-      (updateResult[0] as unknown as { affectedRows?: number })
-        ?.affectedRows ?? 0
+      (updateResult[0] as unknown as { affectedRows?: number })?.affectedRows ??
+        0
     );
     if (affected === 0) {
       const completedAtValue = isCompleted ? sql`NOW()` : sql`NULL`;
@@ -712,6 +713,60 @@ export async function getAllCertificates(): Promise<Certificate[]> {
   return db.select().from(certificates).orderBy(desc(certificates.issuedAt));
 }
 
+// جميع الشهادات التي يمكن أن يحصل عليها الموظف، مع بيانات صاحب الشهادة.
+// شهادات إتمام الدورة والمسار لا تُحفظ في جدول certificates.
+export async function getAllCertificatesForAdmin() {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db.execute(sql`
+    SELECT id, userId, employeeNumber, userName, kind, title, issuedAt,
+           certificateCode, courseId, pathId, departmentName
+    FROM (
+      SELECT c.id, c.userId, u.employeeNumber, u.name AS userName,
+             'admin' AS kind, c.title, c.issuedAt,
+             c.certificateCode, c.courseId, NULL AS pathId,
+             NULL AS departmentName
+      FROM certificates c
+      LEFT JOIN users u ON u.id = c.userId
+
+      UNION ALL
+
+      SELECT cc.id, cc.userId, COALESCE(u.employeeNumber, cc.employeeId),
+             COALESCE(u.name, cc.fullName), 'course' AS kind,
+             cc.courseName AS title, cc.issuedAt, cc.certCode,
+             cc.courseId, NULL AS pathId, cc.departmentName
+      FROM course_completion_certs cc
+      LEFT JOIN users u ON u.id = cc.userId
+
+      UNION ALL
+
+      SELECT pp.pathId AS id, pp.userId, u.employeeNumber, u.name,
+             'path' AS kind, cp.name AS title, pp.completedAt,
+             NULL AS certificateCode, NULL AS courseId, pp.pathId,
+             d.name AS departmentName
+      FROM path_progress pp
+      INNER JOIN course_paths cp ON cp.id = pp.pathId
+      LEFT JOIN departments d ON d.id = cp.departmentId
+      LEFT JOIN users u ON u.id = pp.userId
+      WHERE pp.isCompleted = 1
+    ) all_certificates
+    ORDER BY issuedAt DESC
+  `);
+  return result[0] as unknown as Array<{
+    id: number;
+    userId: number;
+    employeeNumber: string | null;
+    userName: string | null;
+    kind: "admin" | "course" | "path";
+    title: string;
+    issuedAt: Date | null;
+    certificateCode: string | null;
+    courseId: number | null;
+    pathId: number | null;
+    departmentName: string | null;
+  }>;
+}
+
 export async function createCertificate(
   data: InsertCertificate
 ): Promise<{ id: number }> {
@@ -818,7 +873,29 @@ export async function getUserIncidents(userId: number): Promise<Incident[]> {
 export async function getAllIncidents(): Promise<Incident[]> {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(incidents).orderBy(desc(incidents.createdAt));
+  const rows = await db
+    .select({
+      id: incidents.id,
+      userId: incidents.userId,
+      title: incidents.title,
+      description: incidents.description,
+      category: incidents.category,
+      status: incidents.status,
+      priority: incidents.priority,
+      adminNotes: incidents.adminNotes,
+      resolvedAt: incidents.resolvedAt,
+      createdAt: incidents.createdAt,
+      updatedAt: incidents.updatedAt,
+      user: {
+        id: users.id,
+        name: users.name,
+        employeeNumber: users.employeeNumber,
+      },
+    })
+    .from(incidents)
+    .leftJoin(users, eq(users.id, incidents.userId))
+    .orderBy(desc(incidents.createdAt));
+  return rows as unknown as Incident[];
 }
 
 export async function createIncident(
@@ -1036,9 +1113,15 @@ export async function getStats() {
   const [enrollmentsCount] = await db
     .select({ count: sql<number>`count(*)` })
     .from(enrollments);
-  const [certificatesCount] = await db
+  const [adminCertificatesCount] = await db
     .select({ count: sql<number>`count(*)` })
     .from(certificates);
+  const [courseCertificatesCount] = await db.execute(sql`
+    SELECT COUNT(*) AS count FROM course_completion_certs
+  `).then(rows => rows[0] as unknown as Array<{ count: number }>);
+  const [pathCertificatesCount] = await db.execute(sql`
+    SELECT COUNT(*) AS count FROM path_progress WHERE isCompleted = 1
+  `).then(rows => rows[0] as unknown as Array<{ count: number }>);
   const [incidentsCount] = await db
     .select({ count: sql<number>`count(*)` })
     .from(incidents);
@@ -1052,9 +1135,206 @@ export async function getStats() {
     tracks: Number(tracksCount?.count ?? 0),
     briefFiles: Number(briefFilesCount?.count ?? 0),
     enrollments: Number(enrollmentsCount?.count ?? 0),
-    certificates: Number(certificatesCount?.count ?? 0),
+    certificates:
+      Number(adminCertificatesCount?.count ?? 0) +
+      Number(courseCertificatesCount?.count ?? 0) +
+      Number(pathCertificatesCount?.count ?? 0),
     incidents: Number(incidentsCount?.count ?? 0),
     pendingRequests: Number(pendingRequestsCount?.count ?? 0),
+  };
+}
+
+export async function getEmployeeStats() {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db.execute(sql`
+    SELECT
+      u.id,
+      u.employeeNumber,
+      u.name,
+      u.departmentId,
+      u.department,
+      u.jobTitle,
+      COUNT(DISTINCT CASE WHEN e.isCompleted = 1 THEN e.id END) AS completedCourses,
+      COUNT(DISTINCT CASE WHEN e.isCompleted = 0 AND COALESCE(e.progress, 0) > 0 THEN e.id END) AS inProgress,
+      COUNT(DISTINCT e.id) AS totalEnrollments,
+      (
+        SELECT COALESCE(ROUND(AVG(COALESCE(e2.progress, 0))), 0)
+        FROM enrollments e2
+        WHERE e2.userId = u.id
+      ) AS completionRate,
+      (
+        SELECT COUNT(*) FROM certificates c1 WHERE c1.userId = u.id
+      ) + (
+        SELECT COUNT(*) FROM course_completion_certs c2 WHERE c2.userId = u.id
+      ) + (
+        SELECT COUNT(*) FROM path_progress pp WHERE pp.userId = u.id AND pp.isCompleted = 1
+      ) AS certificates
+    FROM users u
+    LEFT JOIN enrollments e ON e.userId = u.id
+    LEFT JOIN certificates cert ON cert.userId = u.id
+    WHERE u.role = 'user'
+    GROUP BY u.id, u.employeeNumber, u.name, u.departmentId, u.department, u.jobTitle
+    ORDER BY u.name ASC
+  `);
+  return result[0] as unknown as Array<{
+    id: number;
+    employeeNumber: string;
+    name: string | null;
+    departmentId: number | null;
+    department: string | null;
+    jobTitle: string | null;
+    completedCourses: number;
+    inProgress: number;
+    totalEnrollments: number;
+    completionRate: number;
+    certificates: number;
+  }>;
+}
+
+export async function getEmployeeDetails(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const userResult = await db.execute(sql`
+    SELECT u.id, u.employeeNumber, u.name, u.departmentId, u.department,
+           u.jobTitle, d.name AS departmentName
+    FROM users u
+    LEFT JOIN departments d ON d.id = u.departmentId
+    WHERE u.id = ${userId} AND u.role = 'user'
+    LIMIT 1
+  `);
+  const userRows = userResult[0] as unknown as any[];
+  if (!userRows[0]) return null;
+  const employee = userRows[0];
+
+  const coursesResult = await db.execute(sql`
+    SELECT c.id, c.title, c.description, c.thumbnailUrl, c.duration,
+           e.id AS enrollmentId, e.progress, e.completedLessons,
+           e.isCompleted, e.enrolledAt, e.completedAt,
+           ce.questions AS examQuestions, ce.passingScore,
+           cea.answers AS examAnswers, cea.score AS examScore,
+           cea.isPassed AS examPassed, cea.attemptedAt AS examAttemptedAt,
+           cr.q1, cr.q2, cr.q3, cr.q4, cr.q5, cr.comment AS ratingComment,
+           cr.createdAt AS ratingCreatedAt
+    FROM courses c
+    LEFT JOIN enrollments e ON e.courseId = c.id AND e.userId = ${userId}
+    LEFT JOIN course_exams ce ON ce.courseId = c.id
+    LEFT JOIN course_exam_attempts cea ON cea.courseId = c.id AND cea.userId = ${userId}
+      AND cea.id = (
+        SELECT latest.id FROM course_exam_attempts latest
+        WHERE latest.courseId = c.id AND latest.userId = ${userId}
+        ORDER BY latest.attemptedAt DESC, latest.id DESC LIMIT 1
+      )
+    LEFT JOIN course_ratings cr ON cr.courseId = c.id AND cr.userId = ${userId}
+    WHERE c.isPublished = 1
+      AND (c.departmentId = ${employee.departmentId} OR c.departmentId IS NULL)
+    ORDER BY c.order ASC, c.id ASC
+  `);
+  const courseRows = coursesResult[0] as unknown as any[];
+
+  const quizzesResult = await db.execute(sql`
+    SELECT q.id, q.courseId, q.title, q.questions, q.passingScore,
+           qa.answers, qa.score, qa.isPassed, qa.attemptedAt
+    FROM quizzes q
+    LEFT JOIN quiz_attempts qa ON qa.quizId = q.id AND qa.userId = ${userId}
+      AND qa.id = (
+        SELECT latest.id FROM quiz_attempts latest
+        WHERE latest.quizId = q.id AND latest.userId = ${userId}
+        ORDER BY latest.attemptedAt DESC, latest.id DESC LIMIT 1
+      )
+    WHERE q.isPublished = 1
+      AND (q.departmentId = ${employee.departmentId} OR q.departmentId IS NULL)
+    ORDER BY q.courseId ASC, q.id ASC
+  `);
+  const quizRows = quizzesResult[0] as unknown as any[];
+
+  const parseJson = (value: unknown, fallback: any = null) => {
+    if (value === null || value === undefined) return fallback;
+    if (typeof value !== "string") return value;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  };
+
+  const courses = courseRows.map(row => ({
+    id: Number(row.id),
+    title: row.title,
+    description: row.description,
+    thumbnailUrl: row.thumbnailUrl,
+    duration: row.duration,
+    enrollment: row.enrollmentId
+      ? {
+          id: Number(row.enrollmentId),
+          progress: Number(row.progress ?? 0),
+          completedLessons: parseJson(row.completedLessons, []),
+          isCompleted: Boolean(row.isCompleted),
+          enrolledAt: row.enrolledAt,
+          completedAt: row.completedAt,
+        }
+      : null,
+    exam: row.examQuestions
+      ? {
+          questions: parseJson(row.examQuestions, []),
+          answers: parseJson(row.examAnswers, null),
+          score: row.examScore === null ? null : Number(row.examScore),
+          isPassed: row.examPassed === null ? null : Boolean(row.examPassed),
+          passingScore: Number(row.passingScore ?? 70),
+          attemptedAt: row.examAttemptedAt,
+        }
+      : null,
+    rating: row.q1 === null
+      ? null
+      : {
+          q1: Number(row.q1), q2: Number(row.q2), q3: Number(row.q3),
+          q4: Number(row.q4), q5: Number(row.q5),
+          average: (Number(row.q1) + Number(row.q2) + Number(row.q3) + Number(row.q4) + Number(row.q5)) / 5,
+          comment: row.ratingComment,
+          createdAt: row.ratingCreatedAt,
+        },
+  }));
+
+  const quizzes = quizRows.map(row => ({
+    id: Number(row.id),
+    courseId: row.courseId === null ? null : Number(row.courseId),
+    title: row.title,
+    questions: parseJson(row.questions, []),
+    answers: parseJson(row.answers, null),
+    score: row.score === null ? null : Number(row.score),
+    isPassed: row.isPassed === null ? null : Boolean(row.isPassed),
+    passingScore: Number(row.passingScore ?? 60),
+    attemptedAt: row.attemptedAt,
+  }));
+
+  const [certificates, employeeIncidents] = await Promise.all([
+    getAllUserCertificates(userId),
+    getUserIncidents(userId),
+  ]);
+
+  return {
+    employee: {
+      id: Number(employee.id),
+      employeeNumber: employee.employeeNumber,
+      name: employee.name,
+      departmentId: employee.departmentId,
+      department: employee.departmentName ?? employee.department,
+      jobTitle: employee.jobTitle,
+    },
+    summary: {
+      requiredCourses: courses.length,
+      enrolledCourses: courses.filter(course => course.enrollment).length,
+      completedCourses: courses.filter(course => course.enrollment?.isCompleted).length,
+      inProgressCourses: courses.filter(course => course.enrollment && !course.enrollment.isCompleted && course.enrollment.progress > 0).length,
+      passedExams: courses.filter(course => course.exam?.isPassed).length + quizzes.filter(quiz => quiz.isPassed).length,
+      totalExams: courses.filter(course => course.exam).length + quizzes.length,
+      certificates: certificates.length,
+    },
+    courses,
+    quizzes,
+    certificates,
+    incidents: employeeIncidents,
   };
 }
 
@@ -1062,9 +1342,9 @@ export async function getStats() {
 export async function toggleCourseLike(
   courseId: number,
   userId: number
-): Promise<{ liked: boolean }> {
+): Promise<{ liked: boolean; likesCount: number }> {
   const db = await getDb();
-  if (!db) return { liked: false };
+  if (!db) return { liked: false, likesCount: 0 };
   const existing = await db
     .select()
     .from(courseLikes)
@@ -1078,10 +1358,10 @@ export async function toggleCourseLike(
       .where(
         and(eq(courseLikes.courseId, courseId), eq(courseLikes.userId, userId))
       );
-    return { liked: false };
+    return { liked: false, likesCount: await getCourseLikesCount(courseId) };
   } else {
     await db.insert(courseLikes).values({ courseId, userId });
-    return { liked: true };
+    return { liked: true, likesCount: await getCourseLikesCount(courseId) };
   }
 }
 
@@ -1153,7 +1433,10 @@ export async function getAllCoursePaths() {
   return db.select().from(coursePaths).orderBy(coursePaths.order);
 }
 
-export async function getCoursePathWithCourses(pathId: number) {
+export async function getCoursePathWithCourses(
+  pathId: number,
+  userId?: number
+) {
   const db = await getDb();
   if (!db) return null;
   const path = await db
@@ -1174,6 +1457,18 @@ export async function getCoursePathWithCourses(pathId: number) {
       courseThumbnail: courses.thumbnailUrl,
       courseIsPublished: courses.isPublished,
       courseDepartmentId: courses.departmentId,
+      likesCount: sql<number>`(
+        SELECT COUNT(*) FROM course_likes cl WHERE cl.courseId = ${courses.id}
+      )`,
+      viewsCount: sql<number>`(
+        SELECT COUNT(DISTINCT cv.userId) FROM course_views cv WHERE cv.courseId = ${courses.id}
+      )`,
+      likedByMe: userId
+        ? sql<boolean>`EXISTS (
+            SELECT 1 FROM course_likes clm
+            WHERE clm.courseId = ${courses.id} AND clm.userId = ${userId}
+          )`
+        : sql<boolean>`0`,
     })
     .from(coursePathItems)
     .innerJoin(courses, eq(coursePathItems.courseId, courses.id))
@@ -1421,18 +1716,29 @@ export async function upsertLessonWatchProgress(
   lessonId: number,
   courseId: number,
   watchedSeconds: number,
-  totalSeconds: number
+  totalSeconds: number,
+  lastPositionSeconds?: number
 ) {
   const db = await getDb();
   if (!db) return null;
-  const isCompleted = totalSeconds > 0 && watchedSeconds >= totalSeconds * 0.95;
+  const safeTotalSeconds = Math.max(1, Math.round(totalSeconds));
+  const safeWatchedSeconds = Math.min(
+    safeTotalSeconds,
+    Math.max(0, Math.round(watchedSeconds))
+  );
+  const safeLastPositionSeconds = Math.min(
+    safeTotalSeconds,
+    Math.max(0, Math.round(lastPositionSeconds ?? safeWatchedSeconds))
+  );
+  const isCompleted = safeWatchedSeconds >= safeTotalSeconds;
   const completedAt = isCompleted ? new Date() : null;
   await db.execute(
-    sql`INSERT INTO lesson_watch_progress (userId, lessonId, courseId, watchedSeconds, totalSeconds, isCompleted, completedAt)
-        VALUES (${userId}, ${lessonId}, ${courseId}, ${watchedSeconds}, ${totalSeconds}, ${isCompleted}, ${completedAt})
+    sql`INSERT INTO lesson_watch_progress (userId, lessonId, courseId, watchedSeconds, lastPositionSeconds, totalSeconds, isCompleted, completedAt)
+        VALUES (${userId}, ${lessonId}, ${courseId}, ${safeWatchedSeconds}, ${safeLastPositionSeconds}, ${safeTotalSeconds}, ${isCompleted}, ${completedAt})
         ON DUPLICATE KEY UPDATE
-          watchedSeconds = GREATEST(watchedSeconds, ${watchedSeconds}),
-          totalSeconds = CASE WHEN ${totalSeconds} > 0 THEN ${totalSeconds} ELSE totalSeconds END,
+          watchedSeconds = GREATEST(watchedSeconds, ${safeWatchedSeconds}),
+          lastPositionSeconds = ${safeLastPositionSeconds},
+          totalSeconds = CASE WHEN ${safeTotalSeconds} > 0 THEN ${safeTotalSeconds} ELSE totalSeconds END,
           isCompleted = CASE WHEN ${isCompleted} = 1 THEN 1 ELSE isCompleted END,
           completedAt = CASE WHEN ${isCompleted} = 1 AND completedAt IS NULL THEN NOW() ELSE completedAt END,
           updatedAt = NOW()`
@@ -1456,8 +1762,8 @@ export async function markLessonComplete(
           WHERE userId = ${userId} AND lessonId = ${lessonId} AND isCompleted = 0`
     );
     const affected = Number(
-      (updateResult[0] as unknown as { affectedRows?: number })
-        ?.affectedRows ?? 0
+      (updateResult[0] as unknown as { affectedRows?: number })?.affectedRows ??
+        0
     );
     if (affected === 0) {
       const existing = await db.execute(
@@ -1544,17 +1850,29 @@ export async function recalcPathProgressForUser(
     const completedCoursesResult = await db.execute(
       sql`SELECT cpi.courseId FROM course_path_items cpi
           WHERE cpi.pathId = ${pathId}
-          AND (
-            SELECT COUNT(*) FROM course_lessons cl
-            WHERE cl.courseId = cpi.courseId AND cl.isPublished = 1
-          ) > 0
-          AND (
-            SELECT COUNT(*) FROM course_lessons cl
-            WHERE cl.courseId = cpi.courseId AND cl.isPublished = 1
-          ) = (
-            SELECT COUNT(*) FROM lesson_watch_progress lwp
-            WHERE lwp.courseId = cpi.courseId AND lwp.userId = ${userId} AND lwp.isCompleted = 1
-          )`
+           AND ((
+             (
+               SELECT COUNT(*) FROM course_lessons cl
+               WHERE cl.courseId = cpi.courseId AND cl.isPublished = 1
+             ) = 0
+             AND EXISTS (
+               SELECT 1 FROM enrollments e
+               WHERE e.courseId = cpi.courseId AND e.userId = ${userId} AND e.isCompleted = 1
+             )
+           )
+           OR (
+             (
+               SELECT COUNT(*) FROM course_lessons cl
+               WHERE cl.courseId = cpi.courseId AND cl.isPublished = 1
+             ) > 0
+             AND (
+               SELECT COUNT(*) FROM course_lessons cl
+               WHERE cl.courseId = cpi.courseId AND cl.isPublished = 1
+             ) = (
+               SELECT COUNT(*) FROM lesson_watch_progress lwp
+               WHERE lwp.courseId = cpi.courseId AND lwp.userId = ${userId} AND lwp.isCompleted = 1
+             )
+            ))`
     );
     const completedRows = completedCoursesResult[0] as unknown as {
       courseId: number;
@@ -1608,7 +1926,8 @@ export async function getTrainingMapStats(departmentId?: number) {
       paths: 0,
       totalMinutes: 0,
     };
-  const result = await db.execute(sql.raw(`
+  const result = await db.execute(
+    sql.raw(`
     SELECT 
       COUNT(*) as total,
       SUM(CASE WHEN isRequired = 1 THEN 1 ELSE 0 END) as mandatory,
@@ -1618,7 +1937,8 @@ export async function getTrainingMapStats(departmentId?: number) {
       SUM(duration) as totalMinutes
     FROM training_map_courses
     ${departmentId === undefined ? "" : `WHERE departmentId = ${departmentId}`}
-  `));
+  `)
+  );
   const rows = result[0] as unknown as Array<{
     total: number;
     mandatory: number;
@@ -1798,9 +2118,10 @@ export async function submitCourseExam(input: {
   // حساب الدرجة
   let correct = 0;
   for (let i = 0; i < questions.length; i++) {
-    const correctAns = questions[i].correctAnswer !== undefined
-      ? questions[i].correctAnswer
-      : questions[i].correctIndex;
+    const correctAns =
+      questions[i].correctAnswer !== undefined
+        ? questions[i].correctAnswer
+        : questions[i].correctIndex;
     if (Number(input.answers[i]) === Number(correctAns)) correct++;
   }
   const score = correct * 10; // كل سؤال 10 درجات

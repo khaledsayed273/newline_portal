@@ -85,6 +85,7 @@ const ADMIN_NAV: NavItem[] = [
   { icon: FileText, label: "الملفات المختصرة", href: "/admin/brief-files" },
   { icon: Users, label: "المستخدمون", href: "/admin/users" },
   { icon: Building2, label: "الإدارات", href: "/admin/departments" },
+  { icon: BarChart3, label: "إحصائيات الموظفين", href: "/admin/employee-stats" },
   { icon: AlertTriangle, label: "التعثرات", href: "/admin/incidents" },
   { icon: Send, label: "طلبات التدريب", href: "/admin/training-requests" },
   { icon: Lightbulb, label: "الاقتراحات", href: "/admin/suggestions" },

@@ -15,6 +15,7 @@ export const lessonWatchProgress = mysqlTable(
     lessonId: int("lessonId").notNull(),
     courseId: int("courseId").notNull(),
     watchedSeconds: int("watchedSeconds").default(0).notNull(),
+    lastPositionSeconds: int("lastPositionSeconds").default(0).notNull(),
     totalSeconds: int("totalSeconds").default(0).notNull(),
     isCompleted: boolean("isCompleted").default(false).notNull(),
     completedAt: timestamp("completedAt"),

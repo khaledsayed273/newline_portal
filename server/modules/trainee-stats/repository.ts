@@ -1,1 +1,5 @@
-export { getTraineeCerts, getTraineeConsultationsCount } from "../../infrastructure/repositories";
+export {
+  getTraineeCerts,
+  getTraineeConsultationsCount,
+  getUserEnrollments,
+} from "../../infrastructure/repositories";

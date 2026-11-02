@@ -1,7 +1,8 @@
 import * as service from "./service";
 export const mine = ({ ctx, input }: any) => {
-  const uid = input?.userId ?? ctx.user?.id;
-  return uid ? service.mine(uid) : [];
+  return service.mine(ctx.user.id);
 };
 export const all = () => service.all();
+export const allForAdmin = () => service.allForAdmin();
+export const employee = ({ input }: any) => service.employee(input.userId);
 export const create = ({ input }: any) => service.create(input);

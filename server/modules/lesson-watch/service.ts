@@ -8,7 +8,8 @@ export const updateProgress = (userId: number, input: any) =>
     input.lessonId,
     input.courseId,
     input.watchedSeconds,
-    input.totalSeconds
+    input.totalSeconds,
+    input.lastPositionSeconds
   );
 export const getCourseProgress = (userId: number, courseId: number) =>
   repository.getCourseWatchProgress(userId, courseId);

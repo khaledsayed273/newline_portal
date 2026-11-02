@@ -53,19 +53,22 @@ function CourseCard({
   isPathLocked: boolean;
   enrollment?: { progress: number; isCompleted: boolean } | null;
 }) {
-  const [liked, setLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(course.likesCount ?? 0);
+  const [liked, setLiked] = useState(Boolean(course.likedByMe));
+  const [likesCount, setLikesCount] = useState(Number(course.likesCount ?? 0));
   const progress = enrollment?.progress ?? course.progress ?? 0;
   const isCompleted = enrollment?.isCompleted ?? false;
 
   const toggleLike = trpc.courseLikes.toggle.useMutation({
     onSuccess: (data: any) => {
       setLiked(data.liked);
-      setLikesCount((prev: number) =>
-        data.liked ? prev + 1 : Math.max(0, prev - 1)
-      );
+      setLikesCount(Number(data.likesCount ?? 0));
     },
   });
+
+  useEffect(() => {
+    setLiked(Boolean(course.likedByMe));
+    setLikesCount(Number(course.likesCount ?? 0));
+  }, [course.likedByMe, course.likesCount]);
 
   return (
     <div
@@ -170,7 +173,7 @@ function CourseCard({
             </Button>
             <div className="flex items-center gap-1 text-muted-foreground">
               <Eye className="w-3.5 h-3.5" />
-              <span>{course.viewsCount ?? 0}</span>
+              <span>{Number(course.viewsCount ?? 0)}</span>
             </div>
             {course.duration && (
               <div className="flex items-center gap-1 text-muted-foreground">
@@ -400,8 +403,9 @@ function PathCard({
                     level: c.courseLevel,
                     thumbnailUrl: c.courseThumbnail,
                     progress: 0,
-                    likesCount: 0,
-                    viewsCount: 0,
+                    likesCount: c.likesCount,
+                    viewsCount: c.viewsCount,
+                    likedByMe: c.likedByMe,
                   }}
                 />
               ))}

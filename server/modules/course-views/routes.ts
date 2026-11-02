@@ -1,8 +1,8 @@
-import { publicProcedure, router } from "../../_core/trpc";
+import { protectedProcedure, router } from "../../_core/trpc";
 import * as controller from "./controller";
 import { courseIdInput, userCourseInput } from "./schema";
 
 export const courseViewsRouter = router({
-  record: publicProcedure.input(userCourseInput).mutation(controller.record),
-  count: publicProcedure.input(courseIdInput).query(controller.count),
+  record: protectedProcedure.input(userCourseInput).mutation(controller.record),
+  count: protectedProcedure.input(courseIdInput).query(controller.count),
 });

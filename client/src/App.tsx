@@ -36,6 +36,8 @@ import AdminTracks from "./pages/admin/AdminTracks";
 import AdminBriefFiles from "./pages/admin/AdminBriefFiles";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminDepartments from "./pages/admin/AdminDepartments";
+import AdminEmployeeStats from "./pages/admin/AdminEmployeeStats";
+import AdminEmployeeDetails from "./pages/admin/AdminEmployeeDetails";
 import AdminTrainingRequests from "./pages/admin/AdminTrainingRequests";
 import AdminIncidents from "./pages/admin/AdminIncidents";
 import AdminSuggestions from "./pages/admin/AdminSuggestions";
@@ -92,6 +94,8 @@ function Router() {
       <Route path="/admin/brief-files" component={AdminBriefFiles} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/departments" component={AdminDepartments} />
+      <Route path="/admin/employee-stats" component={AdminEmployeeStats} />
+      <Route path="/admin/employees/:employeeId" component={AdminEmployeeDetails} />
       <Route
         path="/admin/training-requests"
         component={AdminTrainingRequests}

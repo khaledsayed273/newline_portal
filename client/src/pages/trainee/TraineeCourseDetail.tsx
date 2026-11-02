@@ -59,6 +59,7 @@ function BunnyVideoPlayer({
   userId,
   onCompleted,
   initialWatched,
+  initialCompleted,
 }: {
   videoId: string;
   lessonId: number;
@@ -66,6 +67,7 @@ function BunnyVideoPlayer({
   userId: number;
   onCompleted: () => void;
   initialWatched: number;
+  initialCompleted: boolean;
 }) {
   const [videoInfo, setVideoInfo] = useState<{
     embedUrl: string;
@@ -75,9 +77,15 @@ function BunnyVideoPlayer({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [watched, setWatched] = useState(initialWatched);
-  const [isCompleted, setIsCompleted] = useState(initialWatched >= 90);
+  const [isCompleted, setIsCompleted] = useState(initialCompleted);
   const [confirmed, setConfirmed] = useState(false);
   const updateProgress = trpc.lessonWatch.updateProgress.useMutation();
+
+  useEffect(() => {
+    setIsCompleted(initialCompleted);
+    setConfirmed(initialCompleted);
+    setWatched(initialCompleted ? 100 : initialWatched);
+  }, [lessonId, initialCompleted, initialWatched]);
 
   useEffect(() => {
     setLoading(true);
@@ -132,9 +140,7 @@ function BunnyVideoPlayer({
       <div className="aspect-video bg-black rounded-xl flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
-          <p className="text-white/60">
-            {error || "تعذّر تحميل الفيديو"}
-          </p>
+          <p className="text-white/60">{error || "تعذّر تحميل الفيديو"}</p>
         </div>
       </div>
     );
@@ -159,9 +165,7 @@ function BunnyVideoPlayer({
             <p className="text-white font-semibold">
               {videoInfo.title || "مقطع الدورة"}
             </p>
-            <h6 className="text-primary-foreground/70">
-              متوفر عبر منصة تسهيل
-            </h6>
+            <h6 className="text-primary-foreground/70">متوفر عبر منصة تسهيل</h6>
           </div>
         </div>
 
@@ -213,7 +217,8 @@ function BunnyVideoPlayer({
           </a>
 
           {!isCompleted && !confirmed ? (
-            <Button variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={handleConfirmWatched}
               className="flex items-center justify-center gap-2 w-full bg-success hover:bg-success/90 active:scale-[0.98] text-success-foreground font-semibold py-3 px-6 rounded-md transition-all duration-150 border border-success/30"
             >
@@ -346,9 +351,7 @@ function TraineeRegistrationModal({
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <User className="h-8 w-8 text-primary" />
           </div>
-          <h2 className="text-foreground mb-1">
-            تسجيل بيانات المتدرب
-          </h2>
+          <h2 className="text-foreground mb-1">تسجيل بيانات المتدرب</h2>
           <p className="text-muted-foreground">
             يرجى تعبئة البيانات التالية قبل بدء المشاهدة — ستُستخدم في شهادة
             الإتمام
@@ -447,6 +450,8 @@ function StrictYouTubePlayer({
   userId,
   onCompleted,
   initialWatched,
+  initialPosition = initialWatched,
+  initialCompleted,
   duration: lessonDuration = 0,
 }: {
   videoId: string;
@@ -455,23 +460,80 @@ function StrictYouTubePlayer({
   userId: number;
   onCompleted: () => void;
   initialWatched: number;
+  initialPosition?: number;
+  initialCompleted: boolean;
   duration?: number;
 }) {
-  const [watchPercent, setWatchPercent] = useState(0);
-  const [isCompleted, setIsCompleted] = useState(false);
+  const [watchPercent, setWatchPercent] = useState(
+    initialCompleted
+      ? 100
+      : lessonDuration > 0
+        ? Math.min(100, Math.round((initialWatched / lessonDuration) * 100))
+        : 0
+  );
+  const [isCompleted, setIsCompleted] = useState(initialCompleted);
   const [warningShown, setWarningShown] = useState(false);
   const [totalDuration, setTotalDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(initialPosition);
+  const [youtubeApiReady, setYoutubeApiReady] = useState(
+    Boolean(window.YT?.Player)
+  );
 
   // تتبع الثواني المشاهدة بدقة
   const watchedSecondsRef = useRef(initialWatched);
-  const lastPositionRef = useRef(0);
+  const furthestWatchedRef = useRef(initialWatched);
+  const lastPositionRef = useRef(initialPosition);
+  const lastEventAtRef = useRef(Date.now());
+  const skipWarningRef = useRef(false);
+  const restorePendingRef = useRef(initialPosition > 0);
+  const playbackStateRef = useRef(-1);
+  const playbackRateRef = useRef(1);
+  const lastSavedAtRef = useRef(0);
   const playerRef = useRef<any>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const completedRef = useRef(false);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const completedRef = useRef(initialCompleted);
   const apiReadyRef = useRef(false);
   const playerCreatedRef = useRef(false);
   const updateMutation = trpc.lessonWatch.updateProgress.useMutation();
+
+  useEffect(() => {
+    watchedSecondsRef.current = initialWatched;
+    furthestWatchedRef.current = initialWatched;
+    lastPositionRef.current = initialPosition;
+    setCurrentTime(initialPosition);
+    lastEventAtRef.current = Date.now();
+    skipWarningRef.current = false;
+    restorePendingRef.current = initialPosition > 0;
+    playbackStateRef.current = -1;
+    playbackRateRef.current = 1;
+    lastSavedAtRef.current = 0;
+    completedRef.current = initialCompleted;
+    setIsCompleted(initialCompleted);
+    setWatchPercent(
+      initialCompleted
+        ? 100
+        : lessonDuration > 0
+          ? Math.min(100, Math.round((initialWatched / lessonDuration) * 100))
+          : 0
+    );
+  }, [
+    lessonId,
+    initialWatched,
+    initialPosition,
+    initialCompleted,
+    lessonDuration,
+  ]);
+
+  useEffect(() => {
+    if (initialCompleted) {
+      setWatchPercent(100);
+    } else if (totalDuration > 0) {
+      setWatchPercent(
+        Math.min(100, Math.round((initialWatched / totalDuration) * 100))
+      );
+    }
+  }, [initialWatched, initialCompleted, totalDuration]);
 
   // تحديد المدة من بيانات الدرس إذا لم يوفرها مشغل يوتيوب بعد
   useEffect(() => {
@@ -482,9 +544,9 @@ function StrictYouTubePlayer({
 
   // تحميل سكريبت YouTube IFrame API مرة واحدة
   useEffect(() => {
-    if (apiReadyRef.current) return;
     if (window.YT && window.YT.Player) {
       apiReadyRef.current = true;
+      setYoutubeApiReady(true);
       return;
     }
     const tag = document.createElement("script");
@@ -493,18 +555,20 @@ function StrictYouTubePlayer({
     firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
     window.onYouTubeIframeAPIReady = () => {
       apiReadyRef.current = true;
+      setYoutubeApiReady(true);
     };
   }, []);
 
   // حفظ التقدم عند الخادم
   const saveProgress = useCallback(
-    (watched: number, total: number) => {
+    (watched: number, total: number, position = lastPositionRef.current) => {
       if (total <= 0) return;
       updateMutation.mutate(
         {
           lessonId,
           courseId,
           watchedSeconds: Math.round(watched),
+          lastPositionSeconds: Math.round(position),
           totalSeconds: Math.round(total),
         },
         {
@@ -524,14 +588,45 @@ function StrictYouTubePlayer({
   // مستمع postMessage كبديل لمراقبة.currentTime (قد لا تُرسل من يوتيوب أحيانًا)
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      return;
       if (!event.data || typeof event.data !== "string") return;
       try {
         const data = JSON.parse(event.data);
         if (data.event === "infoDelivery" && data.info) {
           const { currentTime, duration, playerState, playbackRate } =
             data.info;
+          const now = Date.now();
 
-          if (playbackRate && playbackRate > 1 && !warningShown) {
+          // يرسل YouTube أحيانًا currentTime=0 أثناء تحميل/استعادة المشغل.
+          // تجاهله حتى يصل المشغل إلى نقطة الاستكمال المحفوظة.
+          if (
+            restorePendingRef.current &&
+            initialWatched > 0 &&
+            typeof currentTime === "number" &&
+            currentTime < initialWatched - 2
+          ) {
+            return;
+          }
+          if (
+            restorePendingRef.current &&
+            typeof currentTime === "number" &&
+            currentTime >= initialWatched - 2
+          ) {
+            restorePendingRef.current = false;
+            lastPositionRef.current = initialWatched;
+            lastEventAtRef.current = now;
+            furthestWatchedRef.current = Math.max(
+              furthestWatchedRef.current,
+              initialWatched
+            );
+          }
+
+          if (
+            !initialCompleted &&
+            playbackRate &&
+            playbackRate > 1 &&
+            !warningShown
+          ) {
             setWarningShown(true);
             toast.error("⚠️ لا يُسمح بتسريع الفيديو — لن يُحتسب الإنجاز", {
               duration: 4000,
@@ -543,26 +638,51 @@ function StrictYouTubePlayer({
           if (duration && duration > 0) {
             setTotalDuration(duration);
 
-            if (currentTime && lastPositionRef.current > 0) {
-              const jump = currentTime - lastPositionRef.current;
-              if (jump > 5) {
-                toast.warning("⚠️ تخطي الفيديو لا يُحتسب في الإنجاز", {
-                  duration: 3000,
-                });
-              } else if (
-                jump > 0 &&
-                jump <= 5 &&
-                (!playbackRate || playbackRate <= 1)
-              ) {
-                watchedSecondsRef.current = Math.min(
-                  watchedSecondsRef.current + jump,
-                  duration
-                );
+            // الدرس المكتمل سابقًا يمكن تشغيله بحرية دون قيود التخطي أو السرعة.
+            if (initialCompleted) {
+              if (typeof currentTime === "number") {
+                lastPositionRef.current = currentTime;
               }
+              return;
             }
 
-            if (currentTime) {
-              lastPositionRef.current = currentTime;
+            if (typeof currentTime === "number") {
+              const elapsedSeconds = Math.max(
+                0,
+                (now - lastEventAtRef.current) / 1000
+              );
+              const forwardDelta = currentTime - lastPositionRef.current;
+              const naturalForward =
+                playerState === 1 &&
+                forwardDelta >= 0 &&
+                forwardDelta <= Math.max(8, elapsedSeconds * 3 + 4);
+
+              if (
+                currentTime > furthestWatchedRef.current + 2 &&
+                !naturalForward
+              ) {
+                try {
+                  playerRef.current?.seekTo?.(furthestWatchedRef.current, true);
+                } catch {}
+                lastPositionRef.current = furthestWatchedRef.current;
+                lastEventAtRef.current = now;
+                if (!skipWarningRef.current) {
+                  skipWarningRef.current = true;
+                  toast.warning("⚠️ لا يمكنك التخطي إلى جزء لم تشاهده بعد", {
+                    duration: 3000,
+                  });
+                  setTimeout(() => {
+                    skipWarningRef.current = false;
+                  }, 3000);
+                }
+              } else {
+                if (currentTime > furthestWatchedRef.current) {
+                  furthestWatchedRef.current = Math.min(currentTime, duration);
+                  watchedSecondsRef.current = furthestWatchedRef.current;
+                }
+                lastPositionRef.current = currentTime;
+                lastEventAtRef.current = now;
+              }
             }
 
             const percent = Math.min(
@@ -577,15 +697,24 @@ function StrictYouTubePlayer({
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [warningShown]);
+  }, [warningShown, initialCompleted]);
 
   // إنشاء مشغل يوتيوب الحقيقي باستخدام IFrame API لكشف نهاية الفيديو (ENDED)
   useEffect(() => {
-    if (!window.YT || !window.YT.Player) return;
+    if (!youtubeApiReady || !window.YT || !window.YT.Player) return;
     if (playerCreatedRef.current) return;
 
-    const player = new window.YT.Player(iframeRef.current!, {
+    if (!playerContainerRef.current) return;
+    const player = new window.YT.Player(playerContainerRef.current, {
       videoId,
+      playerVars: {
+        controls: 1,
+        disablekb: 1,
+        enablejsapi: 1,
+        playsinline: 1,
+        rel: 0,
+        origin: window.location.origin,
+      },
       events: {
         onReady: () => {
           try {
@@ -593,9 +722,13 @@ function StrictYouTubePlayer({
             if (dur && dur > 0) {
               setTotalDuration(dur);
             }
+            if (initialPosition > 0 && restorePendingRef.current) {
+              player.seekTo(initialPosition, true);
+            }
           } catch {}
         },
         onStateChange: (event: any) => {
+          playbackStateRef.current = event.data;
           // YT.PlayerState.ENDED = 0
           if (event.data === 0 && !completedRef.current) {
             const total =
@@ -604,14 +737,87 @@ function StrictYouTubePlayer({
                 : lessonDuration > 0
                   ? lessonDuration
                   : 0;
-            if (total > 0) {
+            const current = Number(player.getCurrentTime?.() ?? 0);
+            const reachedEnd =
+              total > 0 &&
+              current >= total - 1 &&
+              (furthestWatchedRef.current >= total - 1 ||
+                current <= furthestWatchedRef.current + 2);
+            if (reachedEnd && playbackRateRef.current === 1) {
               watchedSecondsRef.current = total;
-              saveProgress(total, total);
+              saveProgress(total, total, total);
               setWatchPercent(100);
               setIsCompleted(true);
               completedRef.current = true;
               onCompleted();
             }
+          } else if (event.data === 2 && !initialCompleted) {
+            // YT.PlayerState.PAUSED: احفظ آخر موضع فورًا بدل انتظار المؤقت.
+            try {
+              const current = Number(player.getCurrentTime?.() ?? 0);
+              if (playbackRateRef.current !== 1) {
+                player.seekTo(furthestWatchedRef.current, true);
+                return;
+              }
+              const total =
+                Number(player.getDuration?.() ?? 0) ||
+                totalDuration ||
+                lessonDuration;
+              if (total > 0) {
+                const elapsedSeconds = Math.max(
+                  0,
+                  (Date.now() - lastEventAtRef.current) / 1000
+                );
+                const forwardDelta = current - lastPositionRef.current;
+                const naturalForward =
+                  forwardDelta >= 0 &&
+                  forwardDelta <= Math.max(8, elapsedSeconds * 3 + 4);
+                if (
+                  current > furthestWatchedRef.current + 2 &&
+                  !naturalForward
+                ) {
+                  player.seekTo(furthestWatchedRef.current, true);
+                } else if (current > furthestWatchedRef.current) {
+                  furthestWatchedRef.current = Math.min(current, total);
+                  watchedSecondsRef.current = furthestWatchedRef.current;
+                }
+                lastPositionRef.current = Math.min(
+                  current,
+                  furthestWatchedRef.current
+                );
+                lastEventAtRef.current = Date.now();
+                saveProgress(
+                  furthestWatchedRef.current,
+                  total,
+                  lastPositionRef.current
+                );
+                setWatchPercent(
+                  Math.min(
+                    100,
+                    Math.round((furthestWatchedRef.current / total) * 100)
+                  )
+                );
+              }
+            } catch {}
+          }
+        },
+        onPlaybackRateChange: (event: any) => {
+          const rate = Number(event.data) || 1;
+          playbackRateRef.current = rate;
+          if (rate !== 1 && !initialCompleted) {
+            if (!warningShown) {
+              setWarningShown(true);
+              toast.error(
+                "⚠️ لا يُسمح بتسريع الفيديو؛ تم إرجاع السرعة إلى طبيعتها",
+                { duration: 4000 }
+              );
+            }
+            try {
+              player.setPlaybackRate(1);
+              player.seekTo(furthestWatchedRef.current, true);
+            } catch {}
+            lastPositionRef.current = furthestWatchedRef.current;
+            lastEventAtRef.current = Date.now();
           }
         },
         onError: () => {},
@@ -619,35 +825,113 @@ function StrictYouTubePlayer({
     });
     playerRef.current = player;
     playerCreatedRef.current = true;
-  }, [window.YT, videoId, iframeRef.current, totalDuration, lessonDuration, saveProgress, onCompleted]);
+  }, [
+    youtubeApiReady,
+    videoId,
+    totalDuration,
+    lessonDuration,
+    saveProgress,
+    onCompleted,
+    initialCompleted,
+    initialPosition,
+    warningShown,
+  ]);
 
-  // حفظ دوري كل 5 ثوانٍ باستخدام getCurrentTime من مشغل يوتيوب
+  // متابعة الموضع من YT.Player والحفظ الدوري أثناء التشغيل حتى بدون Pause
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       if (!totalDuration || totalDuration <= 0) return;
-      let current = watchedSecondsRef.current;
+      const isPlaying = playbackStateRef.current === 1;
+      const canCountWatchTime =
+        isPlaying &&
+        document.visibilityState === "visible" &&
+        playbackRateRef.current === 1;
+      let current = 0;
       try {
-        if (playerRef.current && typeof playerRef.current.getCurrentTime === "function") {
+        if (
+          playerRef.current &&
+          typeof playerRef.current.getCurrentTime === "function"
+        ) {
           const ct = playerRef.current.getCurrentTime();
-          if (ct && ct >= 0) {
-            current = Math.max(watchedSecondsRef.current, Math.floor(ct));
+          if (typeof ct === "number" && ct >= 0) {
+            current = Math.min(totalDuration, ct);
+            setCurrentTime(current);
+
+            if (!canCountWatchTime) {
+              lastPositionRef.current = current;
+              lastEventAtRef.current = Date.now();
+            } else if (
+              !initialCompleted &&
+              restorePendingRef.current &&
+              initialPosition > 0 &&
+              ct < initialPosition - 1
+            ) {
+              playerRef.current.seekTo(initialPosition, true);
+              current = initialPosition;
+              setCurrentTime(current);
+            } else if (
+              !initialCompleted &&
+              ct > furthestWatchedRef.current + 3
+            ) {
+              playerRef.current.seekTo(furthestWatchedRef.current, true);
+              current = furthestWatchedRef.current;
+              setCurrentTime(current);
+            } else if (!initialCompleted) {
+              restorePendingRef.current = false;
+              current = Math.min(totalDuration, Math.floor(ct));
+              if (current > furthestWatchedRef.current) {
+                furthestWatchedRef.current = current;
+                watchedSecondsRef.current = current;
+              }
+              lastPositionRef.current = current;
+              lastEventAtRef.current = Date.now();
+            } else {
+              lastPositionRef.current = current;
+              lastEventAtRef.current = Date.now();
+            }
           }
         }
       } catch {}
-      saveProgress(current, totalDuration);
-      watchedSecondsRef.current = Math.min(current, totalDuration);
-      setWatchPercent(Math.min(100, Math.round((watchedSecondsRef.current / totalDuration) * 100)));
-    }, 5000);
+      if (initialCompleted) {
+        setWatchPercent(
+          Math.min(100, Math.round((current / totalDuration) * 100))
+        );
+      } else {
+        const percent = Math.min(
+          100,
+          Math.round((watchedSecondsRef.current / totalDuration) * 100)
+        );
+        setWatchPercent(previous =>
+          previous === percent ? previous : percent
+        );
+        if (canCountWatchTime && Date.now() - lastSavedAtRef.current >= 5000) {
+          lastSavedAtRef.current = Date.now();
+          saveProgress(
+            furthestWatchedRef.current,
+            totalDuration,
+            lastPositionRef.current
+          );
+        }
+      }
+    }, 1000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [totalDuration, saveProgress]);
+  }, [totalDuration, saveProgress, initialCompleted, initialPosition]);
 
   // حفظ التقدم عند مغادرة الصفحة أو إخفاء التبويب
   useEffect(() => {
     const flush = () => {
-      if (totalDuration > 0 && watchedSecondsRef.current > 0 && !completedRef.current) {
-        saveProgress(watchedSecondsRef.current, totalDuration);
+      if (
+        totalDuration > 0 &&
+        watchedSecondsRef.current > 0 &&
+        !completedRef.current
+      ) {
+        saveProgress(
+          watchedSecondsRef.current,
+          totalDuration,
+          lastPositionRef.current
+        );
       }
     };
     const handleBeforeUnload = () => flush();
@@ -662,28 +946,29 @@ function StrictYouTubePlayer({
     };
   }, [totalDuration, saveProgress]);
 
-  const iframeSrc = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0&modestbranding=1&origin=${encodeURIComponent(window.location.origin)}`;
+  const formatTime = (seconds: number) => {
+    const safeSeconds = Math.max(0, Math.floor(seconds || 0));
+    const minutes = Math.floor(safeSeconds / 60);
+    const remainder = safeSeconds % 60;
+    return `${minutes}:${String(remainder).padStart(2, "0")}`;
+  };
 
   return (
     <div className="space-y-3">
       {/* مشغل الفيديو */}
       <div className="relative aspect-video rounded-xl overflow-hidden shadow-xl">
-        <iframe
-          ref={iframeRef}
-          src={iframeSrc}
-          title="فيديو الدرس"
-          className="w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-        {isCompleted && (
-          <div className="absolute inset-0 bg-success/10 border-2 border-success rounded-xl pointer-events-none flex items-center justify-center">
-            <div className="bg-success text-success-foreground rounded-full px-4 py-2 flex items-center gap-2 shadow-lg">
-              <CheckCircle2 className="h-5 w-5" />
-              <span className="font-bold">تم إكمال الدرس</span>
-            </div>
-          </div>
-        )}
+        <div ref={playerContainerRef} className="w-full h-full" />
+      </div>
+
+      <div className="card p-3 space-y-2">
+        <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+          <span dir="ltr" className="font-medium">
+            {formatTime(currentTime)} / {formatTime(totalDuration)}
+          </span>
+          <span>
+            متبقي: {formatTime(Math.max(0, totalDuration - currentTime))}
+          </span>
+        </div>
       </div>
 
       {/* مؤشر التقدم */}
@@ -766,9 +1051,7 @@ function ZoomPlayer({
           </svg>
         </div>
         <div>
-          <h2 className="text-white">
-            {lesson.title}
-          </h2>
+          <h2 className="text-white">{lesson.title}</h2>
           <p className="text-white/75">تسجيل Zoom مباشر</p>
         </div>
       </div>
@@ -776,14 +1059,11 @@ function ZoomPlayer({
       {/* بطاقة كلمة المرور */}
       {passcode ? (
         <div className="bg-white/15 border border-white/30 rounded-xl px-6 py-4 w-full max-w-xs text-center">
-          <h6 className="text-white/75 mb-2 uppercase">
-            كلمة المرور للتسجيل
-          </h6>
+          <h6 className="text-white/75 mb-2 uppercase">كلمة المرور للتسجيل</h6>
           <div className="flex items-center justify-center gap-3">
-            <h2 className="text-white font-mono select-all">
-              {passcode}
-            </h2>
-            <Button variant="ghost" 
+            <h2 className="text-white font-mono select-all">{passcode}</h2>
+            <Button
+              variant="ghost"
               onClick={handleCopy}
               className="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-white"
               title="نسخ كلمة المرور"
@@ -829,6 +1109,8 @@ function VideoPlayer({
   userId,
   onCompleted,
   initialWatched,
+  initialPosition,
+  initialCompleted,
 }: {
   lesson: {
     id: number;
@@ -844,16 +1126,22 @@ function VideoPlayer({
   userId: number;
   onCompleted: () => void;
   initialWatched: number;
+  initialPosition?: number;
+  initialCompleted: boolean;
 }) {
   if (lesson.fileUrl) {
-    const isPdf = lesson.fileType?.toLowerCase() === "pdf" || /\.pdf(?:$|[?#])/i.test(lesson.fileUrl);
+    const isPdf =
+      lesson.fileType?.toLowerCase() === "pdf" ||
+      /\.pdf(?:$|[?#])/i.test(lesson.fileUrl);
     if (isPdf) {
       return (
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xl">
           <div className="flex items-center justify-between gap-3 border-b border-border bg-muted px-4 py-3">
             <div className="flex min-w-0 items-center gap-2">
               <FileText className="size-5 shrink-0 text-primary" />
-              <span className="truncate font-semibold text-foreground">{lesson.title}</span>
+              <span className="truncate font-semibold text-foreground">
+                {lesson.title}
+              </span>
             </div>
             <a
               href={lesson.fileUrl}
@@ -901,9 +1189,7 @@ function VideoPlayer({
       <div className="aspect-video bg-muted rounded-xl flex items-center justify-center">
         <div className="text-center">
           <Play className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-muted-foreground">
-            لا يوجد فيديو لهذا الدرس
-          </p>
+          <p className="text-muted-foreground">لا يوجد فيديو لهذا الدرس</p>
         </div>
       </div>
     );
@@ -920,6 +1206,7 @@ function VideoPlayer({
         userId={userId}
         onCompleted={onCompleted}
         initialWatched={initialWatched}
+        initialCompleted={initialCompleted}
       />
     );
   }
@@ -946,6 +1233,8 @@ function VideoPlayer({
           userId={userId}
           onCompleted={onCompleted}
           initialWatched={initialWatched}
+          initialPosition={initialPosition}
+          initialCompleted={initialCompleted}
           duration={lesson.duration ?? undefined}
         />
       );
@@ -1025,7 +1314,6 @@ export default function TraineeCourseDetail() {
   const courseId = parseInt(params.id);
   const [, setLocation] = useLocation();
   const [activeLesson, setActiveLesson] = useState<number>(0);
-  const [showRegistration, setShowRegistration] = useState(false);
   const [completedLessonIds, setCompletedLessonIds] = useState<Set<number>>(
     new Set()
   );
@@ -1046,7 +1334,10 @@ export default function TraineeCourseDetail() {
   } | null>(null);
   const [certCode, setCertCode] = useState<string | null>(null);
 
-  const { user } = useAuth({ redirectOnUnauthenticated: true, redirectPath: "/login" });
+  const { user } = useAuth({
+    redirectOnUnauthenticated: true,
+    redirectPath: "/login",
+  });
   const userId = user?.id ?? 0;
 
   const { data: course, isLoading: courseLoading } = trpc.courses.byId.useQuery(
@@ -1055,27 +1346,46 @@ export default function TraineeCourseDetail() {
   const { data: lessons, isLoading: lessonsLoading } =
     trpc.lessons.byCourse.useQuery({ courseId });
   const { data: courseWatchProgress } =
-    trpc.lessonWatch.getCourseProgress.useQuery({ courseId }, { enabled: Boolean(user) });
+    trpc.lessonWatch.getCourseProgress.useQuery(
+      { courseId },
+      { enabled: Boolean(user) }
+    );
   const { data: existingExam } = trpc.courseExam.getByCourse.useQuery({
     courseId,
   });
-  const { data: existingAttempt } = trpc.courseExam.getAttempt.useQuery({
-    courseId,
-  }, { enabled: Boolean(user) });
-  const { data: existingCert } = trpc.courseCert.get.useQuery({
-    courseId,
-  }, { enabled: Boolean(user) });
-  const { data: existingRating } = trpc.courseRating.getForCourse.useQuery({
-    courseId,
-  }, { enabled: Boolean(user) });
+  const { data: existingAttempt } = trpc.courseExam.getAttempt.useQuery(
+    {
+      courseId,
+    },
+    { enabled: Boolean(user) }
+  );
+  const { data: existingCert } = trpc.courseCert.get.useQuery(
+    {
+      courseId,
+    },
+    { enabled: Boolean(user) }
+  );
+  const { data: existingRating } = trpc.courseRating.getForCourse.useQuery(
+    {
+      courseId,
+    },
+    { enabled: Boolean(user) }
+  );
 
   const submitRatingMutation = trpc.courseRating.submit.useMutation();
   const submitExamMutation = trpc.courseExam.submit.useMutation();
   const issueCertMutation = trpc.courseCert.issue.useMutation();
+  const recordViewMutation = trpc.courseViews.record.useMutation();
   const markLessonCompleteMutation =
     trpc.lessonWatch.markLessonComplete.useMutation();
 
   const utils = trpc.useUtils();
+
+  useEffect(() => {
+    if (user && course) {
+      recordViewMutation.mutate({ courseId });
+    }
+  }, [courseId, Boolean(user), Boolean(course)]);
 
   // تحديث حالة الإكمال من قاعدة البيانات
   useEffect(() => {
@@ -1090,7 +1400,9 @@ export default function TraineeCourseDetail() {
 
   // فتح مرحلة الشهادة مباشرة عبر ?phase=certificate (من صفحة شهاداتي)
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("phase") !== "certificate")
+    if (
+      new URLSearchParams(window.location.search).get("phase") !== "certificate"
+    )
       return;
     if (existingCert) {
       setCertCode(existingCert.certCode);
@@ -1110,6 +1422,7 @@ export default function TraineeCourseDetail() {
 
   const handleLessonCompleted = useCallback(() => {
     if (!currentLesson) return;
+    if (completedLessonIds.has(currentLesson.id)) return;
     setCompletedLessonIds(prev => {
       const next = new Set<number>(Array.from(prev));
       next.add(currentLesson.id);
@@ -1133,39 +1446,13 @@ export default function TraineeCourseDetail() {
     }
   }, [
     currentLesson,
+    completedLessonIds,
     activeLesson,
     totalLessons,
     courseId,
     utils,
     recalcMutation,
     markLessonCompleteMutation,
-  ]);
-
-  // عند إكمال جميع الدروس → انتقل لمرحلة التقييم
-  useEffect(() => {
-    if (
-      overallProgress === 100 &&
-      coursePhase === "watching" &&
-      totalLessons > 0
-    ) {
-      if (existingCert) {
-        setCertCode(existingCert.certCode);
-        setCoursePhase("certificate");
-      } else if (existingAttempt?.isPassed) {
-        setCoursePhase("certificate");
-      } else if (existingRating) {
-        setCoursePhase("exam");
-      } else {
-        setTimeout(() => setCoursePhase("rating"), 1500);
-      }
-    }
-  }, [
-    overallProgress,
-    coursePhase,
-    totalLessons,
-    existingCert,
-    existingAttempt,
-    existingRating,
   ]);
 
   const handleSubmitRating = async () => {
@@ -1230,16 +1517,26 @@ export default function TraineeCourseDetail() {
     setCoursePhase("certificate");
   };
 
+  const handleCertificateRequest = async () => {
+    if (existingCert) {
+      setCertCode(existingCert.certCode);
+      setCoursePhase("certificate");
+      return;
+    }
+    if (existingAttempt?.isPassed) {
+      await handleIssueCert(existingAttempt.score ?? 100);
+      return;
+    }
+    if (existingRating) {
+      setCoursePhase("exam");
+      return;
+    }
+    setCoursePhase("rating");
+  };
+
   const handleRetryExam = () => {
     setExamAnswers({});
     setExamResult(null);
-  };
-
-  const handleRegistrationComplete = (profile: {
-    fullName: string;
-    employeeId: string;
-  }) => {
-    setShowRegistration(false);
   };
 
   const formatDuration = (seconds?: number | null) => {
@@ -1280,7 +1577,8 @@ export default function TraineeCourseDetail() {
                   </p>
                   <div className="flex gap-2 justify-center">
                     {[1, 2, 3, 4, 5].map(star => (
-                      <Button variant="ghost" 
+                      <Button
+                        variant="ghost"
                         key={star}
                         onClick={() =>
                           setRatingAnswers(prev => ({ ...prev, [q.id]: star }))
@@ -1350,9 +1648,7 @@ export default function TraineeCourseDetail() {
                   <h2 className="text-success-emphasis">
                     مبروك! اجتزت الاختبار
                   </h2>
-                  <h2 className="text-primary">
-                    {examResult.score}/100
-                  </h2>
+                  <h2 className="text-primary">{examResult.score}/100</h2>
                   <p className="text-muted-foreground">
                     أجبت عن {examResult.correct} من {examResult.total} أسئلة
                     بشكل صحيح
@@ -1423,7 +1719,8 @@ export default function TraineeCourseDetail() {
                       </p>
                       <div className="space-y-3">
                         {q.options.map((opt: string, oi: number) => (
-                          <Button variant="ghost"
+                          <Button
+                            variant="ghost"
                             key={oi}
                             onClick={() =>
                               setExamAnswers(prev => ({ ...prev, [qi]: oi }))
@@ -1487,7 +1784,11 @@ export default function TraineeCourseDetail() {
               <ArrowRight className="h-4 w-4" />
               الدورات
             </Button>
-            <Button variant="ghost"  onClick={() => window.print()} className="gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => window.print()}
+              className="gap-2"
+            >
               <Printer className="h-4 w-4" />
               طباعة الشهادة
             </Button>
@@ -1518,9 +1819,7 @@ export default function TraineeCourseDetail() {
               </div>
 
               {/* عنوان مزدوج عربي وإنجليزي */}
-              <h1 className="cert-navy mb-1">
-                شهادة إتمام برنامج تدريبي
-              </h1>
+              <h1 className="cert-navy mb-1">شهادة إتمام برنامج تدريبي</h1>
               <p className="cert-gold uppercase mb-5">
                 CERTIFICATE OF COMPLETION
               </p>
@@ -1551,19 +1850,13 @@ export default function TraineeCourseDetail() {
               <h6 className="text-gray-500 mb-2">
                 for successfully completing the training program entitled:
               </h6>
-              <h2 className="cert-navy mb-3">
-                "{course.title}"
-              </h2>
+              <h2 className="cert-navy mb-3">"{course.title}"</h2>
 
               {/* درجة الاختبار */}
               {(examResult || existingAttempt) && (
                 <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-5 py-1.5 mb-3">
-                  <span className="text-gray-600">
-                    درجة الاختبار / Score:
-                  </span>
-                  <h2
-                    className="cert-navy"
-                  >
+                  <span className="text-gray-600">درجة الاختبار / Score:</span>
+                  <h2 className="cert-navy">
                     {examResult?.score ?? existingAttempt?.score ?? 0}/100
                   </h2>
                 </div>
@@ -1574,9 +1867,7 @@ export default function TraineeCourseDetail() {
                 العملية، وتُمنح هذه الشهادة اعترافاً بالتزامه وحضوره ومشاركته
                 الفعّالة وإتمامه جميع متطلبات البرنامج.
               </h6>
-              <p className="cert-gold">
-                {issueDate}
-              </p>
+              <p className="cert-gold">{issueDate}</p>
             </div>
 
             {/* الموجات الزرقاء والذهبية */}
@@ -1726,7 +2017,11 @@ export default function TraineeCourseDetail() {
       <PortalLayout role="trainee" title="غير موجود">
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <p className="text-muted-foreground">الدورة غير موجودة</p>
-          <Button variant="ghost"  onClick={() => setLocation("/courses")} className="gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation("/courses")}
+            className="gap-2"
+          >
             <ArrowRight className="h-4 w-4" />
             العودة للدورات
           </Button>
@@ -1737,14 +2032,6 @@ export default function TraineeCourseDetail() {
 
   return (
     <>
-      {/* نافذة تسجيل المتدرب */}
-      {showRegistration && (
-        <TraineeRegistrationModal
-          userId={userId}
-          onComplete={handleRegistrationComplete}
-        />
-      )}
-
       <PortalLayout role="trainee" title={course.title}>
         <div className="space-y-6">
           {/* رأس الصفحة */}
@@ -1776,12 +2063,6 @@ export default function TraineeCourseDetail() {
                 <span className="text-muted-foreground">
                   {user.employeeNumber}
                 </span>
-                <Button variant="ghost" size="sm" 
-                  onClick={() => setShowRegistration(true)}
-                  className="text-primary hover:underline text-xs ms-1"
-                >
-                  تعديل
-                </Button>
               </div>
             )}
           </div>
@@ -1791,30 +2072,30 @@ export default function TraineeCourseDetail() {
             <div className="lg:col-span-2 space-y-5 animate-in fade-in slide-in-from-bottom-4">
               {/* مشغل الفيديو */}
               {currentLesson ? (
-                user.name && user.employeeNumber ? (
-                  <VideoPlayer
-                    lesson={{ ...currentLesson, courseId }}
-                    userId={userId}
-                    onCompleted={handleLessonCompleted}
-                    initialWatched={
-                      courseWatchProgress?.find(
-                        (p: any) => Number(p.lessonId) === currentLesson.id
-                      )?.watchedSeconds ?? 0
-                    }
-                  />
-                ) : (
-                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center">
-                    <div className="text-center space-y-3">
-                      <Lock className="h-12 w-12 text-primary/50 mx-auto" />
-                      <p className="text-muted-foreground font-medium">
-                        يرجى تسجيل بياناتك أولاً
-                      </p>
-                      <Button onClick={() => setShowRegistration(true)}>
-                        تسجيل البيانات
-                      </Button>
-                    </div>
-                  </div>
-                )
+                <VideoPlayer
+                  lesson={{ ...currentLesson, courseId }}
+                  userId={userId}
+                  onCompleted={handleLessonCompleted}
+                  initialWatched={
+                    courseWatchProgress?.find(
+                      (p: any) => Number(p.lessonId) === currentLesson.id
+                    )?.watchedSeconds ?? 0
+                  }
+                  initialPosition={
+                    courseWatchProgress?.find(
+                      (p: any) => Number(p.lessonId) === currentLesson.id
+                    )?.lastPositionSeconds ??
+                    courseWatchProgress?.find(
+                      (p: any) => Number(p.lessonId) === currentLesson.id
+                    )?.watchedSeconds ??
+                    0
+                  }
+                  initialCompleted={Boolean(
+                    courseWatchProgress?.find(
+                      (p: any) => Number(p.lessonId) === currentLesson.id
+                    )?.isCompleted
+                  )}
+                />
               ) : (
                 <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center">
                   <div className="text-center">
@@ -1914,9 +2195,7 @@ export default function TraineeCourseDetail() {
                   )}
                   <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
                     <Play className="h-4 w-4 text-primary" />
-                    <span className="font-medium">
-                      {totalLessons} درس
-                    </span>
+                    <span className="font-medium">{totalLessons} درس</span>
                   </div>
                 </div>
               </div>
@@ -1927,9 +2206,7 @@ export default function TraineeCourseDetail() {
               {/* إجمالي التقدم */}
               <div className="card p-4 sm:p-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <h5 className="text-foreground"> 
-                    تقدمك في الدورة
-                  </h5>
+                  <h5 className="text-foreground">تقدمك في الدورة</h5>
                   <strong className="text-2xl font-bold leading-none text-primary">
                     {overallProgress}%
                   </strong>
@@ -1942,8 +2219,19 @@ export default function TraineeCourseDetail() {
                   <div className="mt-3 p-3 bg-success/10 border border-success/30 rounded-lg text-center">
                     <Award className="h-6 w-6 text-success-emphasis mx-auto mb-1" />
                     <h6 className="text-success-emphasis">
-                      أكملت الدورة! تحقق من المسار للحصول على شهادتك
+                      أكملت الدورة بنجاح
                     </h6>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="mt-2 gap-2"
+                      onClick={handleCertificateRequest}
+                      disabled={issueCertMutation.isPending}
+                    >
+                      <Award className="h-4 w-4" />
+                      {existingCert ? "عرض الشهادة" : "الحصول على الشهادة"}
+                    </Button>
                   </div>
                 )}
               </div>
@@ -1993,8 +2281,8 @@ export default function TraineeCourseDetail() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                              <p
-                                className={cn(
+                            <p
+                              className={cn(
                                 "truncate text-sm font-semibold",
                                 isActive ? "text-primary" : "text-foreground"
                               )}
@@ -2020,9 +2308,7 @@ export default function TraineeCourseDetail() {
                   <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-warning/15">
                     <Shield className="size-4 text-warning-emphasis" />
                   </div>
-                  <h5 className="text-warning-emphasis">
-                    قواعد الاعتماد
-                  </h5>
+                  <h5 className="text-warning-emphasis">قواعد الاعتماد</h5>
                 </div>
                 <ul className="space-y-2 text-xs leading-6 text-muted-foreground">
                   <li className="flex items-start gap-2">

@@ -1,0 +1,1 @@
+ALTER TABLE `lesson_watch_progress` ADD `lastPositionSeconds` int DEFAULT 0 NOT NULL;

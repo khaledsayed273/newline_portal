@@ -1,10 +1,17 @@
 import { TRPCError } from "@trpc/server";
 import * as service from "./service";
 export const listAll = () => service.getAllCoursePaths();
-export const byDepartment = ({ input }: any) =>
-  service.getCoursePathsByDepartment(input.departmentId);
-export const withCourses = ({ input }: any) =>
-  service.getCoursePathWithCourses(input.pathId);
+export const byDepartment = ({ input, ctx }: any) =>
+  ctx.user.role === "admin" || ctx.user.departmentId === input.departmentId
+    ? service.getCoursePathsByDepartment(input.departmentId)
+    : [];
+export const withCourses = async ({ input, ctx }: any) => {
+  const path = await service.getCoursePathWithCourses(input.pathId, ctx.user.id);
+  if (!path) return undefined;
+  return ctx.user.role === "admin" || ctx.user.departmentId === path.departmentId
+    ? path
+    : undefined;
+};
 export const withProgress = ({ input, ctx }: any) =>
   ctx.user.role === "admin" || ctx.user.departmentId === input.departmentId
     ? service.getPathsWithProgressForDepartment(ctx.user.id, input.departmentId)

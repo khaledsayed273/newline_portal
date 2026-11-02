@@ -1,5 +1,6 @@
 import { z } from "zod";
 export const mineInput = z.object({ userId: z.number().optional() }).optional();
+export const employeeInput = z.object({ userId: z.number() });
 export const createInput = z.object({
   userId: z.number(),
   courseId: z.number().optional(),

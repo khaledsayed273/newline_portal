@@ -1,1 +1,5 @@
-export { getStats } from "../../infrastructure/repositories";
+export {
+  getStats,
+  getEmployeeStats,
+  getEmployeeDetails,
+} from "../../infrastructure/repositories";

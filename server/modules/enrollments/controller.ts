@@ -1,19 +1,31 @@
 export * from "./service";
 import * as service from "./service";
+import { TRPCError } from "@trpc/server";
+import { getCourseById } from "../../infrastructure/repositories";
+
+async function assertCourseAccess(ctx: any, courseId: number) {
+  const course = await getCourseById(courseId);
+  if (!course || (ctx.user.role !== "admin" && course.departmentId !== ctx.user.departmentId)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "لا يمكنك الوصول إلى دورة من إدارة أخرى",
+    });
+  }
+}
 
 export const myEnrollments = ({ ctx, input }: any) => {
-  const uid = input?.userId ?? ctx.user?.id;
-  if (!uid) return [];
-  return service.getUserEnrollments(uid);
+  return service.getUserEnrollments(ctx.user.id);
 };
-export const enroll = ({ ctx, input }: any) =>
-  service.enrollUser({
-    userId: input.userId ?? ctx.user?.id ?? 0,
+export const enroll = async ({ ctx, input }: any) => {
+  await assertCourseAccess(ctx, input.courseId);
+  return service.enrollUser({
+    userId: ctx.user.id,
     courseId: input.courseId,
   });
+};
 export const updateProgress = ({ ctx, input }: any) =>
   service.updateEnrollmentProgress(
-    input.userId ?? ctx.user?.id ?? 0,
+    ctx.user.id,
     input.courseId,
     input.progress,
     input.completedLessons

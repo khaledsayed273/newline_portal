@@ -1,7 +1,6 @@
 import {
   adminProcedure,
   protectedProcedure,
-  publicProcedure,
   router,
 } from "../../_core/trpc";
 import * as controller from "./controller";
@@ -9,10 +8,10 @@ import * as schema from "./schema";
 
 export const coursePathsRouter = router({
   listAll: adminProcedure.query(controller.listAll),
-  byDepartment: publicProcedure
+  byDepartment: protectedProcedure
     .input(schema.departmentInput)
     .query(controller.byDepartment),
-  withCourses: publicProcedure
+  withCourses: protectedProcedure
     .input(schema.pathIdInput)
     .query(controller.withCourses),
   byDepartmentWithProgress: protectedProcedure
