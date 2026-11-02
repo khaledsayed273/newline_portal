@@ -92,6 +92,13 @@
       "when": 1792257205067,
       "tag": "0013_sync_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1793620700825,
+      "tag": "0013_brief_crusher_hogan",
+      "breakpoints": true
     }
   ]
 }

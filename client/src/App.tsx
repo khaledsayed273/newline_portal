@@ -18,7 +18,6 @@ import TraineeBriefFiles from "./pages/trainee/TraineeBriefFiles";
 import TraineeQuizzes from "./pages/trainee/TraineeQuizzes";
 import TraineeCertificates from "./pages/trainee/TraineeCertificates";
 import TraineeFAQs from "./pages/trainee/TraineeFAQs";
-import TraineeIncidents from "./pages/trainee/TraineeIncidents";
 import TraineeTrainingRequest from "./pages/trainee/TraineeTrainingRequest";
 import TraineeSuggestions from "./pages/trainee/TraineeSuggestions";
 import TraineeJobDescriptions from "./pages/trainee/TraineeJobDescriptions";
@@ -36,6 +35,7 @@ import AdminCourses from "./pages/admin/AdminCourses";
 import AdminTracks from "./pages/admin/AdminTracks";
 import AdminBriefFiles from "./pages/admin/AdminBriefFiles";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminDepartments from "./pages/admin/AdminDepartments";
 import AdminTrainingRequests from "./pages/admin/AdminTrainingRequests";
 import AdminIncidents from "./pages/admin/AdminIncidents";
 import AdminSuggestions from "./pages/admin/AdminSuggestions";
@@ -77,7 +77,6 @@ function Router() {
       <Route path="/quizzes" component={TraineeQuizzes} />
       <Route path="/certificates" component={TraineeCertificates} />
       <Route path="/faqs" component={TraineeFAQs} />
-      <Route path="/incidents" component={TraineeIncidents} />
       <Route path="/training-request" component={TraineeTrainingRequest} />
       <Route path="/suggestions" component={TraineeSuggestions} />
       <Route path="/job-descriptions" component={TraineeJobDescriptions} />
@@ -92,6 +91,7 @@ function Router() {
       <Route path="/admin/tracks" component={AdminTracks} />
       <Route path="/admin/brief-files" component={AdminBriefFiles} />
       <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/departments" component={AdminDepartments} />
       <Route
         path="/admin/training-requests"
         component={AdminTrainingRequests}

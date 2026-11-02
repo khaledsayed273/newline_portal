@@ -31,9 +31,18 @@ import { trpc } from "@/lib/trpc";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function AdminUsers() {
   const { data: users, isLoading } = trpc.users.all.useQuery();
+  const { data: departments = [] } = trpc.departments.list.useQuery();
   const utils = trpc.useUtils();
 
   const [search, setSearch] = useState("");
@@ -44,6 +53,8 @@ export default function AdminUsers() {
   const [cEmployeeNumber, setCEmployeeNumber] = useState("");
   const [cPassword, setCPassword] = useState("");
   const [cRole, setCRole] = useState<"user" | "admin">("user");
+  const [cDepartmentId, setCDepartmentId] = useState("");
+  const [cJobTitle, setCJobTitle] = useState("");
 
   const [editUser, setEditUser] = useState<any>(null);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
@@ -51,6 +62,8 @@ export default function AdminUsers() {
   const [eEmployeeNumber, setEEmployeeNumber] = useState("");
   const [ePassword, setEPassword] = useState("");
   const [eRole, setERole] = useState<"user" | "admin">("user");
+  const [eDepartmentId, setEDepartmentId] = useState("");
+  const [eJobTitle, setEJobTitle] = useState("");
 
   const invalidate = () => utils.users.all.invalidate();
 
@@ -62,6 +75,8 @@ export default function AdminUsers() {
       setCEmployeeNumber("");
       setCPassword("");
       setCRole("user");
+      setCDepartmentId("");
+      setCJobTitle("");
       toast.success("تم إنشاء المستخدم");
     },
     onError: (err) => toast.error(err.message || "فشل إنشاء المستخدم"),
@@ -94,6 +109,8 @@ export default function AdminUsers() {
     setEEmployeeNumber(user.employeeNumber ?? "");
     setEPassword("");
     setERole(user.role === "admin" ? "admin" : "user");
+    setEDepartmentId(user.departmentId ? String(user.departmentId) : "");
+    setEJobTitle(user.jobTitle ?? "");
   };
 
   const filteredUsers =
@@ -101,14 +118,15 @@ export default function AdminUsers() {
       if (roleFilter !== "all" && u.role !== roleFilter) return false;
       const q = search.trim().toLowerCase();
       if (!q) return true;
-      return (
+       return (
         (u.name ?? "").toLowerCase().includes(q) ||
-        (u.employeeNumber ?? "").toLowerCase().includes(q)
+        (u.employeeNumber ?? "").toLowerCase().includes(q) ||
+        (u.jobTitle ?? "").toLowerCase().includes(q)
       );
     }) ?? [];
 
   return (
-    <PortalLayout role="admin" title="إدارة المتدربين">
+    <PortalLayout role="admin" title="جدول الموظفين">
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h6 className="text-sm text-muted-foreground">
@@ -118,7 +136,7 @@ export default function AdminUsers() {
             <Input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="بحث بالاسم أو الرقم الوظيفي"
+               placeholder="بحث بالاسم أو الرقم الوظيفي أو المسمى"
               className="flex-1 min-w-[180px] bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             <Select
@@ -130,7 +148,7 @@ export default function AdminUsers() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">الكل</SelectItem>
-                <SelectItem value="user">متدرب</SelectItem>
+                 <SelectItem value="user">موظف</SelectItem>
                 <SelectItem value="admin">مدير</SelectItem>
               </SelectContent>
             </Select>
@@ -148,59 +166,49 @@ export default function AdminUsers() {
             ))}
           </div>
         ) : (
-          <div className="space-y-2 animate-in fade-in slide-in-from-bottom-4">
-            {filteredUsers.map((user: any) => (
-              <div key={user.id} className="card p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold flex-shrink-0">
-                  {(user.name ?? "?").charAt(0)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="text-foreground">{user.name ?? "مجهول"}</h4>
-                    <Badge
-                      variant={user.role === "admin" ? "secondary" : "outline"}
-                    >
-                      {user.role === "admin" ? "مدير" : "متدرب"}
-                    </Badge>
-                    {!user.hasLocalLogin && (
-                      <Badge variant="destructive">بدون دخول محلي</Badge>
-                    )}
-                  </div>
-                  {user.employeeNumber && (
-                    <h6 className="text-muted-foreground">
-                      {user.employeeNumber}
-                    </h6>
-                  )}
-                  <h6 className="text-muted-foreground">
-                    آخر دخول:{" "}
-                    {new Date(user.lastSignedIn).toLocaleDateString("ar-SA")}
-                  </h6>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <Button variant="ghost" size="sm" 
-                    onClick={() => openEdit(user)}
-                    className="flex items-center gap-1.5 text-xs text-primary hover:underline font-semibold"
-                    title="تعديل المستخدم"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    تعديل
-                  </Button>
-                  <Button variant="ghost" size="sm" 
-                    onClick={() => handleDelete(user)}
-                    className="flex items-center gap-1 text-xs text-destructive hover:underline font-semibold"
-                    title="حذف المستخدم"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    حذف
-                  </Button>
-                </div>
-              </div>
-            ))}
-            {filteredUsers.length === 0 && (
-              <div className="card p-6 text-center text-muted-foreground">
-                لا توجد نتائج
-              </div>
-            )}
+           <div className="overflow-x-auto rounded-xl bg-card shadow-sm animate-in fade-in slide-in-from-bottom-4">
+             <Table className="min-w-[980px]">
+               <TableHeader className="bg-muted">
+                  <TableRow className="border-border-muted">
+                    <TableHead className="text-start w-[150px]">الرقم الوظيفي</TableHead>
+                    <TableHead className="text-start min-w-[260px]">اسم الموظف</TableHead>
+                    <TableHead className="text-start min-w-[220px]">المسمى الوظيفي</TableHead>
+                    <TableHead className="text-start min-w-[180px]">الإدارة</TableHead>
+                    <TableHead className="text-start w-[140px]">نوع الحساب</TableHead>
+                    <TableHead className="text-start w-[190px]">الإجراءات</TableHead>
+                 </TableRow>
+               </TableHeader>
+               <TableBody>
+              {filteredUsers.map((user: any, index: number) => (
+                <TableRow key={user.id} className={`${index % 2 === 0 ? "bg-card" : "bg-muted/50"} border-border-muted`}>
+                  <TableCell className="text-start text-muted-foreground" >{user.employeeNumber ?? "-"}</TableCell>
+                  <TableCell className="font-medium text-foreground">{user.name ?? "مجهول"}</TableCell>
+                  <TableCell className="text-muted-foreground">{user.jobTitle ?? "-"}</TableCell>
+                  <TableCell className="text-muted-foreground">{departments.find((d: any) => d.id === user.departmentId)?.name ?? user.department ?? "-"}</TableCell>
+                 <TableCell>
+                   <Badge variant={user.role === "admin" ? "secondary" : "outline"}>
+                     {user.role === "admin" ? "مدير" : "موظف"}
+                   </Badge>
+                 </TableCell>
+                 <TableCell>
+                   <div className="flex items-center gap-1">
+                     <Button variant="ghost" size="sm" onClick={() => openEdit(user)} className="gap-1 text-xs text-primary">
+                       <Pencil className="h-3.5 w-3.5" /> تعديل
+                     </Button>
+                     <Button variant="ghost" size="sm" onClick={() => handleDelete(user)} className="gap-1 text-xs text-destructive">
+                       <Trash2 className="h-3.5 w-3.5" /> حذف
+                     </Button>
+                   </div>
+                 </TableCell>
+               </TableRow>
+             ))}
+               </TableBody>
+             </Table>
+             {filteredUsers.length === 0 && (
+               <div className="p-6 text-center text-muted-foreground">
+                 لا توجد نتائج
+               </div>
+             )}
           </div>
         )}
       </div>
@@ -219,6 +227,8 @@ export default function AdminUsers() {
                 name: cName,
                 password: cPassword,
                 role: cRole,
+                departmentId: cDepartmentId ? Number(cDepartmentId) : undefined,
+                jobTitle: cJobTitle.trim() || undefined,
               });
             }}
             className="space-y-4"
@@ -268,10 +278,24 @@ export default function AdminUsers() {
                     <SelectValue placeholder="الدور" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">متدرب</SelectItem>
+                     <SelectItem value="user">موظف</SelectItem>
                     <SelectItem value="admin">مدير</SelectItem>
                   </SelectContent>
                 </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="cDepartment">الإدارة</FieldLabel>
+                <Select value={cDepartmentId || "__none__"} onValueChange={v => setCDepartmentId(v === "__none__" ? "" : v)}>
+                  <SelectTrigger id="cDepartment" className="w-full"><SelectValue placeholder="اختر الإدارة" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">بدون إدارة</SelectItem>
+                    {departments.map((d: any) => <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="cJobTitle">المسمى الوظيفي</FieldLabel>
+                <Input id="cJobTitle" value={cJobTitle} onChange={e => setCJobTitle(e.target.value)} placeholder="المسمى الوظيفي" />
               </Field>
             </FieldGroup>
             <DialogFooter>
@@ -299,6 +323,8 @@ export default function AdminUsers() {
                 employeeNumber: eEmployeeNumber.trim(),
                 role: eRole,
                 password: ePassword ? ePassword : undefined,
+                departmentId: eDepartmentId ? Number(eDepartmentId) : null,
+                jobTitle: eJobTitle.trim() || null,
               });
             }}
             className="space-y-4"
@@ -337,6 +363,20 @@ export default function AdminUsers() {
                     <SelectItem value="admin">مدير</SelectItem>
                   </SelectContent>
                 </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="eDepartment">الإدارة</FieldLabel>
+                <Select value={eDepartmentId || "__none__"} onValueChange={v => setEDepartmentId(v === "__none__" ? "" : v)}>
+                  <SelectTrigger id="eDepartment" className="w-full"><SelectValue placeholder="اختر الإدارة" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">بدون إدارة</SelectItem>
+                    {departments.map((d: any) => <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="eJobTitle">المسمى الوظيفي</FieldLabel>
+                <Input id="eJobTitle" value={eJobTitle} onChange={e => setEJobTitle(e.target.value)} placeholder="المسمى الوظيفي" />
               </Field>
               <Field>
                 <FieldLabel htmlFor="ePassword">كلمة مرور جديدة (اختياري)</FieldLabel>

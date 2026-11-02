@@ -10,6 +10,8 @@ export const createUserInput = z.object({
   name: z.string().min(1),
   password: z.string().min(6),
   role: z.enum(["user", "admin"]).optional(),
+  departmentId: z.number().int().positive().optional(),
+  jobTitle: z.string().optional(),
 });
 
 export const updateUserInput = z.object({
@@ -18,6 +20,8 @@ export const updateUserInput = z.object({
   name: z.string().min(1).optional(),
   password: z.string().min(6).optional(),
   role: z.enum(["user", "admin"]).optional(),
+  departmentId: z.number().int().positive().nullable().optional(),
+  jobTitle: z.string().optional().nullable(),
 });
 
 export const resetPasswordInput = z.object({

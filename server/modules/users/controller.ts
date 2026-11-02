@@ -15,6 +15,8 @@ export const create = async ({ input }: any) => {
     name: input.name.trim(),
     password: input.password,
     role: input.role ?? "user",
+    departmentId: input.departmentId,
+    jobTitle: input.jobTitle?.trim(),
   });
   return { success: true } as const;
 };
@@ -39,6 +41,8 @@ export const update = async ({ input, ctx }: any) => {
     employeeNumber: input.employeeNumber?.trim(),
     role: input.role,
     password: input.password,
+    departmentId: input.departmentId,
+    jobTitle: input.jobTitle?.trim(),
   });
   return { success: true } as const;
 };

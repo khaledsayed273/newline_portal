@@ -6,7 +6,9 @@ export const byDepartment = ({ input }: any) =>
 export const withCourses = ({ input }: any) =>
   service.getCoursePathWithCourses(input.pathId);
 export const withProgress = ({ input, ctx }: any) =>
-  service.getPathsWithProgressForDepartment(ctx.user.id, input.departmentId);
+  ctx.user.role === "admin" || ctx.user.departmentId === input.departmentId
+    ? service.getPathsWithProgressForDepartment(ctx.user.id, input.departmentId)
+    : [];
 export const progress = ({ input, ctx }: any) =>
   service.getPathProgress(ctx.user.id, input.pathId);
 export const updateProgress = ({ input, ctx }: any) =>

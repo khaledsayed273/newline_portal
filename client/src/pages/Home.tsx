@@ -23,7 +23,6 @@ export const PORTAL_SERVICES = [
     label: "الأوصاف الوظيفية",
     href: "/job-descriptions",
   },
-  { icon: AlertTriangle, label: "سجلات التعثرات", href: "/incidents" },
   { icon: Map, label: "المسار التوجيهي", href: "/training-map" },
   { icon: Globe, label: "الثقافة العامة", href: "/general-culture" },
   { icon: MessageCircle, label: "الاستشارات", href: "/consultations" },

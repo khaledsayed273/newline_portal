@@ -4,33 +4,14 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { MessageCircle, Send, CheckCircle, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-
-const DEPARTMENTS = [
-  "الخدمات المشتركة",
-  "التشغيل",
-  "المبيعات",
-  "الصيانة",
-  "المالية",
-  "الموارد البشرية",
-  "تقنية المعلومات",
-  "أخرى",
-];
 
 export default function TraineeConsultations() {
   const { user } = useAuth();
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [department, setDepartment] = useState("");
   const [userName, setUserName] = useState(user?.name ?? "");
   const [sent, setSent] = useState(false);
 
@@ -53,7 +34,7 @@ export default function TraineeConsultations() {
       message: message.trim(),
       userName: userName.trim() || user?.name || "متدرب",
 
-      department: department || undefined,
+       department: undefined,
     });
   };
 
@@ -61,7 +42,6 @@ export default function TraineeConsultations() {
     setSent(false);
     setSubject("");
     setMessage("");
-    setDepartment("");
   };
 
   return (
@@ -116,32 +96,6 @@ export default function TraineeConsultations() {
                 placeholder={user?.name ?? "أدخل اسمك"}
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
               />
-            </div>
-
-            {/* الإدارة */}
-            <div>
-              <label className="block text-foreground mb-2">
-                الإدارة{" "}
-                <span className="text-muted-foreground font-normal">
-                  (اختياري)
-                </span>
-              </label>
-              <Select
-                value={department || "__none__"}
-                onValueChange={v => setDepartment(v === "__none__" ? "" : v)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="اختر الإدارة..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">اختر الإدارة...</SelectItem>
-                  {DEPARTMENTS.map(d => (
-                    <SelectItem key={d} value={d}>
-                      {d}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
 
             {/* موضوع الاستشارة */}

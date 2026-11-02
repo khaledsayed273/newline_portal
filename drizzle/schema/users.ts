@@ -14,6 +14,7 @@ export const users = mysqlTable("users", {
   name: text("name"),
   passwordHash: varchar("passwordHash", { length: 255 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  departmentId: int("departmentId"),
   department: varchar("department", { length: 128 }),
   jobTitle: varchar("jobTitle", { length: 128 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

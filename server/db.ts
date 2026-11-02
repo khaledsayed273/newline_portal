@@ -136,6 +136,9 @@ export async function updateUser(
     employeeNumber?: string;
     role?: "user" | "admin";
     passwordHash?: string;
+    departmentId?: number | null;
+    department?: string | null;
+    jobTitle?: string | null;
   }
 ): Promise<void> {
   const db = await getDb();
@@ -146,6 +149,9 @@ export async function updateUser(
     set.employeeNumber = data.employeeNumber;
   if (data.role !== undefined) set.role = data.role;
   if (data.passwordHash !== undefined) set.passwordHash = data.passwordHash;
+  if (data.departmentId !== undefined) set.departmentId = data.departmentId;
+  if (data.department !== undefined) set.department = data.department;
+  if (data.jobTitle !== undefined) set.jobTitle = data.jobTitle;
   if (Object.keys(set).length === 0) return;
   await db.update(users).set(set).where(eq(users.id, userId));
 }
@@ -156,6 +162,9 @@ export async function createLocalUser(data: {
   name?: string | null;
   passwordHash: string;
   role?: "user" | "admin";
+  departmentId?: number;
+  department?: string | null;
+  jobTitle?: string | null;
 }): Promise<void> {
   const db = await getDb();
   if (!db) return;
@@ -164,6 +173,9 @@ export async function createLocalUser(data: {
     name: data.name ?? null,
     passwordHash: data.passwordHash,
     role: data.role ?? "user",
+    departmentId: data.departmentId,
+    department: data.department ?? null,
+    jobTitle: data.jobTitle ?? null,
     lastSignedIn: new Date(),
   });
 }
@@ -235,13 +247,20 @@ export async function getAllCourses(): Promise<Course[]> {
   return db.select().from(courses).orderBy(courses.order);
 }
 
-export async function getCourseById(id: number): Promise<Course | undefined> {
+export async function getCourseById(
+  id: number,
+  departmentId?: number
+): Promise<Course | undefined> {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db
     .select()
     .from(courses)
-    .where(eq(courses.id, id))
+    .where(
+      departmentId === undefined
+        ? eq(courses.id, id)
+        : and(eq(courses.id, id), eq(courses.departmentId, departmentId))
+    )
     .limit(1);
   return result[0];
 }
@@ -1578,7 +1597,7 @@ export async function getTrainingMapCourses(
   }>;
 }
 
-export async function getTrainingMapStats() {
+export async function getTrainingMapStats(departmentId?: number) {
   const db = await getDb();
   if (!db)
     return {
@@ -1589,7 +1608,7 @@ export async function getTrainingMapStats() {
       paths: 0,
       totalMinutes: 0,
     };
-  const result = await db.execute(sql`
+  const result = await db.execute(sql.raw(`
     SELECT 
       COUNT(*) as total,
       SUM(CASE WHEN isRequired = 1 THEN 1 ELSE 0 END) as mandatory,
@@ -1598,7 +1617,8 @@ export async function getTrainingMapStats() {
       COUNT(DISTINCT pathName) as paths,
       SUM(duration) as totalMinutes
     FROM training_map_courses
-  `);
+    ${departmentId === undefined ? "" : `WHERE departmentId = ${departmentId}`}
+  `));
   const rows = result[0] as unknown as Array<{
     total: number;
     mandatory: number;

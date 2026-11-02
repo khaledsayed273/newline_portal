@@ -2,7 +2,6 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import PortalLayout from "@/components/PortalLayout";
 import { trpc } from "@/lib/trpc";
 import {
-  AlertTriangle,
   Award,
   BookOpen,
   Briefcase,
@@ -64,15 +63,6 @@ const SERVICES = [
     color: "#fbbf24",
     bg: "rgba(251,191,36,0.10)",
     border: "rgba(251,191,36,0.22)",
-  },
-  {
-    href: "/incidents",
-    label: "التعثرات",
-    desc: "تتبع وإدارة التعثرات والمشكلات",
-    icon: AlertTriangle,
-    color: "#f87171",
-    bg: "rgba(248,113,113,0.10)",
-    border: "rgba(248,113,113,0.22)",
   },
   {
     href: "/training-request",

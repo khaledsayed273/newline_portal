@@ -1,48 +1,59 @@
 import { Button } from "@/components/ui/button";
 import PortalLayout from "@/components/PortalLayout";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Briefcase, CheckCircle2, Download } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function TraineeJobDescriptions() {
   const [selectedDept, setSelectedDept] = useState<number | undefined>();
+  const { user } = useAuth({ redirectOnUnauthenticated: true, redirectPath: "/login" });
+  const isAdmin = user?.role === "admin";
 
-  const { data: departments } = trpc.departments.list.useQuery();
+  const { data: departments } = trpc.departments.list.useQuery(undefined, {
+    enabled: isAdmin,
+  });
   const { data: jobs, isLoading } = trpc.jobDescriptions.list.useQuery({
     departmentId: selectedDept,
   });
 
+  useEffect(() => {
+    if (!isAdmin && user?.departmentId) setSelectedDept(user.departmentId);
+  }, [isAdmin, user?.departmentId]);
+
   return (
     <PortalLayout role="trainee" title="الأوصاف الوظيفية">
       <div className="space-y-6">
-        <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-4">
-          <Button variant="ghost" 
-            onClick={() => setSelectedDept(undefined)}
-            className={cn(
-              "px-4 py-2 rounded-full text-sm font-semibold transition-all",
-              !selectedDept
-                ? "bg-primary text-primary-foreground shadow-md"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            )}
-          >
-            الكل
-          </Button>
-          {departments?.map(dept => (
-            <Button variant="ghost" 
-              key={dept.id}
-              onClick={() => setSelectedDept(dept.id)}
+        {isAdmin && (
+          <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-4">
+            <Button variant="ghost"
+              onClick={() => setSelectedDept(undefined)}
               className={cn(
                 "px-4 py-2 rounded-full text-sm font-semibold transition-all",
-                selectedDept === dept.id
+                !selectedDept
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               )}
             >
-              {dept.name}
+              الكل
             </Button>
-          ))}
-        </div>
+            {departments?.map(dept => (
+              <Button variant="ghost"
+                key={dept.id}
+                onClick={() => setSelectedDept(dept.id)}
+                className={cn(
+                  "px-4 py-2 rounded-full text-sm font-semibold transition-all",
+                  selectedDept === dept.id
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
+              >
+                {dept.name}
+              </Button>
+            ))}
+          </div>
+        )}
 
         {isLoading ? (
           <div className="space-y-4">

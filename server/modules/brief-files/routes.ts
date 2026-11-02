@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure, publicProcedure, router } from "../../_core/trpc";
+import { protectedProcedure, router } from "../../_core/trpc";
 import * as controller from "./controller";
 import {
   briefFileIdInput,
@@ -18,7 +18,7 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 });
 
 export const briefFilesRouter = router({
-  list: publicProcedure
+  list: protectedProcedure
     .input(departmentInput.optional())
     .query(controller.list),
   listAll: adminProcedure.query(controller.listAll),

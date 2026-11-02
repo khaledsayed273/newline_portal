@@ -513,6 +513,16 @@ export default function TraineeCourses() {
   } | null>(null);
   const activeDeptData = DEPARTMENTS.find(d => d.id === activeDept);
   const { user } = useAuth({ redirectOnUnauthenticated: true, redirectPath: "/login" });
+  const visibleDepartments =
+    user?.role === "admin"
+      ? DEPARTMENTS
+      : DEPARTMENTS.filter(dept => dept.id === user?.departmentId);
+
+  useEffect(() => {
+    if (user?.role !== "admin" && user?.departmentId) {
+      setActiveDept(user.departmentId);
+    }
+  }, [user?.role, user?.departmentId]);
 
   return (
     <PortalLayout role="trainee" title="الدورات التدريبية">
@@ -528,7 +538,7 @@ export default function TraineeCourses() {
             <div>
               <h1>الدورات التدريبية</h1>
               <h6 className="text-primary-foreground/80 mt-0.5">
-                5 مسارات متسلسلة لكل إدارة — أكمل المسار للحصول على شهادة
+                 الدورات الخاصة بإدارتك — أكمل المسار للحصول على شهادة
               </h6>
             </div>
           </div>
@@ -536,7 +546,7 @@ export default function TraineeCourses() {
 
         {/*شريط الإدارات الأفقي الثابت*/}
         <div className="card p-1.5 mb-6 flex items-center gap-1 overflow-x-auto">
-          {DEPARTMENTS.map(dept => {
+          {visibleDepartments.map(dept => {
             const Icon = dept.icon;
             const isActive = activeDept === dept.id;
             return (
@@ -553,7 +563,7 @@ export default function TraineeCourses() {
         </div>
 
         {/*عنوان الإدارة المختارة*/}
-        {activeDeptData && (
+        {activeDeptData && visibleDepartments.length > 0 && (
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 bg-muted border border-border rounded-xl flex items-center justify-center">
               <activeDeptData.icon className="w-5 h-5 text-primary" />
@@ -569,12 +579,18 @@ export default function TraineeCourses() {
         )}
 
         {/*محتوى الإدارة المختارة*/}
-        <DepartmentContent
-           key={activeDept}
-           deptId={activeDept}
-           userId={user?.id ?? 0}
-          onCertificate={(path, deptName) => setCertPath({ path, deptName })}
-        />
+        {visibleDepartments.length > 0 ? (
+          <DepartmentContent
+             key={activeDept}
+             deptId={activeDept}
+             userId={user?.id ?? 0}
+            onCertificate={(path, deptName) => setCertPath({ path, deptName })}
+          />
+        ) : (
+          <div className="card p-8 text-center text-muted-foreground">
+            لم يتم ربط حسابك بإدارة بعد. يرجى التواصل مع المدير.
+          </div>
+        )}
       </div>
 
       {/* نافذة الشهادة */}

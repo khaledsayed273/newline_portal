@@ -3,6 +3,7 @@ import PortalLayout from "@/components/PortalLayout";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
   Download,
@@ -12,7 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function getFileIcon(fileType?: string | null) {
   if (!fileType) return File;
@@ -83,12 +84,19 @@ export default function TraineeBriefFiles() {
   const [expandedDepts, setExpandedDepts] = useState<Set<number>>(
     new Set([1, 2, 3, 4, 5])
   );
+  const { user } = useAuth({ redirectOnUnauthenticated: true, redirectPath: "/login" });
+  const isAdmin = user?.role === "admin";
 
+  // نحتاج أسماء الإدارات لتجميع الملفات وعرضها، مع إبقاء فلتر الإدارات مخفيًا للموظف.
   const { data: departments } = trpc.departments.list.useQuery();
   const { data: briefFiles, isLoading } = trpc.briefFiles.list.useQuery(
     { departmentId: selectedDept },
     { placeholderData: (prev: any) => prev }
   );
+
+  useEffect(() => {
+    if (!isAdmin && user?.departmentId) setSelectedDept(user.departmentId);
+  }, [isAdmin, user?.departmentId]);
 
   const toggleDept = (deptId: number) => {
     const next = new Set(expandedDepts);
@@ -137,8 +145,8 @@ export default function TraineeBriefFiles() {
   return (
     <PortalLayout role="trainee" title="الدورات السريعة">
       <div className="space-y-5">
-        {/* فلتر الإدارات */}
-        <div className="flex flex-wrap gap-2">
+        {/* فلتر الإدارات للمدير فقط */}
+        {isAdmin && <div className="flex flex-wrap gap-2">
           <Button variant="ghost" 
             onClick={() => setSelectedDept(undefined)}
             className={cn(
@@ -170,7 +178,7 @@ export default function TraineeBriefFiles() {
               </Button>
             );
           })}
-        </div>
+        </div>}
 
         {/*المحتوى*/}
         {isLoading ? (

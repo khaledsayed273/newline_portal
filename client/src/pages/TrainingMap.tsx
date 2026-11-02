@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import PortalLayout from "@/components/PortalLayout";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,12 @@ export default function TrainingMap() {
   >("all");
   const [filterLevel, setFilterLevel] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const { user } = useAuth({ redirectOnUnauthenticated: true, redirectPath: "/login" });
+  const isAdmin = user?.role === "admin";
+
+  useEffect(() => {
+    if (!isAdmin && user?.departmentId) setSelectedDept(user.departmentId);
+  }, [isAdmin, user?.departmentId]);
 
   const { data: stats } = trpc.trainingMap.getStats.useQuery();
   const { data: courses = [], isLoading } = trpc.trainingMap.getAll.useQuery({
@@ -130,21 +137,23 @@ export default function TrainingMap() {
               onChange={e => setSearch(e.target.value)}
               className="w-full sm:w-64"
           />
-          <Select
-            value={String(selectedDept)}
-            onValueChange={v => setSelectedDept(Number(v))}
-          >
-            <SelectTrigger className="w-full sm:w-52">
-              <SelectValue placeholder="الإدارة" />
-            </SelectTrigger>
-            <SelectContent>
-              {DEPARTMENTS.map(d => (
-                <SelectItem key={d.id} value={String(d.id)}>
-                  {d.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isAdmin && (
+            <Select
+              value={String(selectedDept)}
+              onValueChange={v => setSelectedDept(Number(v))}
+            >
+              <SelectTrigger className="w-full sm:w-52">
+                <SelectValue placeholder="الإدارة" />
+              </SelectTrigger>
+              <SelectContent>
+                {DEPARTMENTS.map(d => (
+                  <SelectItem key={d.id} value={String(d.id)}>
+                    {d.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Select
             value={filterRequired}
             onValueChange={v =>
