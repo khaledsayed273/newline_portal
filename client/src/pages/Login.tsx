@@ -20,8 +20,12 @@ export default function Login() {
       toast.success("تم تسجيل الدخول بنجاح");
       navigate(me?.role === "admin" ? "/admin" : "/");
     },
-    onError: () => {
-      toast.error("بيانات الدخول غير صحيحة");
+    onError: error => {
+      toast.error(
+        error.data?.code === "UNAUTHORIZED"
+          ? "بيانات الدخول غير صحيحة"
+          : error.message || "حدث خطأ أثناء تسجيل الدخول"
+      );
     },
   });
 

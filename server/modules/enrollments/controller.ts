@@ -1,11 +1,14 @@
 export * from "./service";
 import * as service from "./service";
 import { TRPCError } from "@trpc/server";
-import { getCourseById } from "../../infrastructure/repositories";
+import { getCourseById } from "../courses/repository";
 
 async function assertCourseAccess(ctx: any, courseId: number) {
   const course = await getCourseById(courseId);
-  if (!course || (ctx.user.role !== "admin" && course.departmentId !== ctx.user.departmentId)) {
+  if (
+    !course ||
+    (ctx.user.role !== "admin" && course.departmentId !== ctx.user.departmentId)
+  ) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "لا يمكنك الوصول إلى دورة من إدارة أخرى",

@@ -1,5 +1,5 @@
 import * as service from "./service";
-import { getDepartments } from "../../infrastructure/repositories";
+import { getDepartments } from "../departments/repository";
 
 export const create = async ({ ctx, input }: any) => {
   let department = input.department;

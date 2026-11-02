@@ -14,6 +14,11 @@ import {
   MANUS_STORAGE_ROOT,
   ensureManusStorageDirectory,
 } from "../infrastructure/fileStorage";
+import {
+  checkDatabaseConnection,
+  getDatabaseTarget,
+} from "../infrastructure/database";
+import { formatErrorForLog } from "./errors";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -212,6 +217,11 @@ async function startServer() {
     createExpressMiddleware({
       router: appRouter,
       createContext,
+      onError({ path, error }) {
+        console.error(
+          `[tRPC] ${path ?? "unknown"} failed: ${formatErrorForLog(error)}`
+        );
+      },
     })
   );
   // development mode uses Vite, production mode uses static files
@@ -219,6 +229,15 @@ async function startServer() {
     await setupVite(app, server);
   } else {
     serveStatic(app);
+  }
+
+  try {
+    await checkDatabaseConnection();
+    console.log(`[Database] Connected to ${getDatabaseTarget()}`);
+  } catch (error) {
+    console.error(
+      `[Database] Connection check failed for ${getDatabaseTarget()}: ${formatErrorForLog(error)}`
+    );
   }
 
   const preferredPort = parseInt(process.env.PORT || "3000");

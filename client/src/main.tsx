@@ -36,6 +36,12 @@ function isAuthzError(error: unknown) {
   );
 }
 
+function isLoginMutation(mutation: { options: { mutationKey?: unknown } }) {
+  const key = mutation.options.mutationKey;
+  const path = Array.isArray(key) ? key[0] : null;
+  return Array.isArray(path) && path.join(".") === "auth.login";
+}
+
 function forceLogout() {
   if (forceLogoutInProgress) return;
   forceLogoutInProgress = true;
@@ -75,7 +81,7 @@ queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
     console.error("[API Mutation Error]", error);
-    handleQueryError(error);
+    if (!isLoginMutation(event.mutation)) handleQueryError(error);
   }
 });
 

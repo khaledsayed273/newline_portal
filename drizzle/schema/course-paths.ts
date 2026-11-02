@@ -31,3 +31,19 @@ export const coursePathItems = mysqlTable("course_path_items", {
 
 export type CoursePathItem = typeof coursePathItems.$inferSelect;
 export type InsertCoursePathItem = typeof coursePathItems.$inferInsert;
+
+// ========== تقدم المستخدم في المسار ==========
+export const pathProgress = mysqlTable("path_progress", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  pathId: int("pathId").notNull(),
+  completedCourses: int("completedCourses").default(0).notNull(),
+  totalCourses: int("totalCourses").default(0).notNull(),
+  isCompleted: boolean("isCompleted").default(false).notNull(),
+  completedAt: timestamp("completedAt"),
+  certificateIssued: boolean("certificateIssued").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PathProgress = typeof pathProgress.$inferSelect;

@@ -1,1 +1,1 @@
-export { getUserByEmployeeNumber, setUserPassword } from "../../infrastructure/repositories";
+export { getUserByEmployeeNumber, setUserPassword } from "../users/repository";

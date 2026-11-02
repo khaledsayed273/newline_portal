@@ -2,7 +2,7 @@ import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
 import type { User } from "../../drizzle/schema";
-import * as db from "../infrastructure/repositories";
+import * as db from "../modules/users/repository";
 import { ENV } from "./env";
 
 const isNonEmptyString = (value: unknown): value is string =>

@@ -2,7 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "../../_core/cookies";
 import { sdk } from "../../_core/sdk";
-import { hashPassword } from "../../_core/password";
+import {
+  formatErrorForLog,
+  getSafeInternalErrorMessage,
+} from "../../_core/errors";
+import { ENV } from "../../_core/env";
 import * as service from "./service";
 
 export const me = ({ ctx }: any) => {
@@ -11,7 +15,19 @@ export const me = ({ ctx }: any) => {
   return safeUser;
 };
 export const login = async ({ ctx, input }: any) => {
-  const user = await service.authenticate(input.employeeNumber, input.password);
+  let user;
+  try {
+    user = await service.authenticate(input.employeeNumber, input.password);
+  } catch (error) {
+    console.error(`[auth.login] Database/authentication failure: ${formatErrorForLog(error)}`);
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: ENV.isProduction
+        ? "تعذر الاتصال بقاعدة البيانات، حاول لاحقًا"
+        : `خطأ في قاعدة البيانات: ${getSafeInternalErrorMessage(error)}`,
+      cause: error,
+    });
+  }
   if (!user)
     throw new TRPCError({
       code: "UNAUTHORIZED",
