@@ -1,14 +1,7 @@
 import * as repository from "./repository";
 
-export const create = async (input: any) => {
-  const result = await repository.sendConsultationEmail({
-    userName: input.userName,
-    subject: input.subject,
-    message: input.message,
-    department: input.department,
-  });
-  if (!result.success) {
-    console.warn("[Consultation] Email not sent:", result.error);
-  }
-  return { success: true, emailSent: result.success };
-};
+export const mine = (userId: number) => repository.getUserConsultations(userId);
+export const all = () => repository.getAllConsultations();
+export const create = (data: any) => repository.createConsultation(data);
+export const update = (id: number, data: any) =>
+  repository.updateConsultation(id, data);

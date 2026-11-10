@@ -12,6 +12,7 @@ export * from "./incidents";
 export * from "./faqs";
 export * from "./training-requests";
 export * from "./suggestions";
+export * from "./consultations";
 export * from "./job-descriptions";
 export * from "./course-engagement";
 export * from "./lesson-watch";

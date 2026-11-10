@@ -71,9 +71,7 @@ const PORTAL_SERVICES: NavItem[] = [
   { icon: Map, label: "المسار التوجيهي", href: "/training-map" },
   { icon: Compass, label: "الخارطة التدريبية", href: "/map" },
   { icon: Globe, label: "الثقافة العامة", href: "/general-culture" },
-  { icon: MessageCircle, label: "الاستشارات", href: "/consultations" },
-  { icon: Send, label: "الطلبات", href: "/training-request" },
-  { icon: Lightbulb, label: "الاقتراحات", href: "/suggestions" },
+  { icon: MessageCircle, label: "الخدمات", href: "/services" },
   { icon: BarChart3, label: "الإحصائيات", href: "/stats" },
   { icon: Award, label: "الشهادات", href: "/certificates" },
 ];
@@ -82,13 +80,12 @@ const ADMIN_NAV: NavItem[] = [
   { icon: LayoutDashboard, label: "لوحة التحكم", href: "/admin" },
   { icon: BookOpen, label: "إدارة الدورات", href: "/admin/courses" },
   { icon: Map, label: "إدارة المسارات", href: "/admin/tracks" },
-  { icon: FileText, label: "الملفات المختصرة", href: "/admin/brief-files" },
+  { icon: FileText, label: "الدورات السريعة", href: "/admin/brief-files" },
   { icon: Users, label: "المستخدمون", href: "/admin/users" },
   { icon: Building2, label: "الإدارات", href: "/admin/departments" },
   { icon: BarChart3, label: "إحصائيات الموظفين", href: "/admin/employee-stats" },
   { icon: AlertTriangle, label: "التعثرات", href: "/admin/incidents" },
-  { icon: Send, label: "طلبات التدريب", href: "/admin/training-requests" },
-  { icon: Lightbulb, label: "الاقتراحات", href: "/admin/suggestions" },
+  { icon: MessageCircle, label: "إدارة الخدمات", href: "/services" },
 ];
 
 const SIDEBAR_WIDTH = "w-60";

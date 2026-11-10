@@ -25,9 +25,7 @@ export const PORTAL_SERVICES = [
   },
   { icon: Map, label: "المسار التوجيهي", href: "/training-map" },
   { icon: Globe, label: "الثقافة العامة", href: "/general-culture" },
-  { icon: MessageCircle, label: "الاستشارات", href: "/consultations" },
-  { icon: Send, label: "الطلبات", href: "/training-request" },
-  { icon: Lightbulb, label: "الاقتراحات", href: "/suggestions" },
+  { icon: MessageCircle, label: "الخدمات", href: "/services" },
   { icon: BarChart3, label: "الإحصائيات", href: "/stats" },
   { icon: Award, label: "الشهادات", href: "/certificates" },
 ];

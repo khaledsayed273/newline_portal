@@ -189,7 +189,7 @@ export default function AdminDepartments() {
                         {department.name}
                       </div>
                     </TableCell>
-                    <TableCell dir="ltr" className="text-start text-muted-foreground">
+                    <TableCell  className="text-start text-muted-foreground">
                       {department.nameEn || "-"}
                     </TableCell>
                     <TableCell className="max-w-[320px] truncate text-muted-foreground">
@@ -229,7 +229,7 @@ export default function AdminDepartments() {
               </Field>
               <Field>
                 <FieldLabel htmlFor="departmentNameEn">الاسم بالإنجليزي</FieldLabel>
-                <Input id="departmentNameEn" value={form.nameEn} onChange={event => updateField("nameEn", event.target.value)} dir="ltr" placeholder="Shared Services" />
+                <Input id="departmentNameEn" value={form.nameEn} onChange={event => updateField("nameEn", event.target.value)} placeholder="Shared Services" />
               </Field>
               <Field>
                 <FieldLabel htmlFor="departmentDescription">الوصف</FieldLabel>
@@ -240,7 +240,7 @@ export default function AdminDepartments() {
                   <FieldLabel htmlFor="departmentColor">اللون</FieldLabel>
                   <div className="flex items-center gap-2">
                     <Input id="departmentColor" type="color" value={form.color} onChange={event => updateField("color", event.target.value)} className="h-10 w-14 cursor-pointer p-1" />
-                    <Input value={form.color} onChange={event => updateField("color", event.target.value)} dir="ltr" />
+                    <Input value={form.color} onChange={event => updateField("color", event.target.value)} />
                   </div>
                 </Field>
                 <Field>

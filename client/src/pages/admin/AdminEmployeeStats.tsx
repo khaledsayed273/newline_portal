@@ -97,7 +97,7 @@ export default function AdminEmployeeStats() {
               <TableBody>
                 {filtered.map((employee: any, index: number) => (
                   <TableRow key={employee.id} className={`${index % 2 === 0 ? "bg-card" : "bg-muted/50"} border-border-muted`}>
-                    <TableCell dir="ltr" className="text-start text-muted-foreground">{employee.employeeNumber}</TableCell>
+                    <TableCell className="text-start text-muted-foreground">{employee.employeeNumber}</TableCell>
                     <TableCell className="font-medium text-foreground">{employee.name || "-"}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {departments.find((department: any) => department.id === employee.departmentId)?.name ?? employee.department ?? "-"}

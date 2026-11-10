@@ -4,6 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { BriefFileForm } from "@/components/BriefFileForm";
+import { FileViewerModal } from "@/components/FileViewerModal";
+import { toast } from "sonner";
+import { Plus, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Download,
@@ -84,6 +88,11 @@ export default function TraineeBriefFiles() {
   const [expandedDepts, setExpandedDepts] = useState<Set<number>>(
     new Set([1, 2, 3, 4, 5])
   );
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [viewerFile, setViewerFile] = useState<{ url: string; type?: string | null; title?: string } | null>(
+    null
+  );
   const { user } = useAuth({ redirectOnUnauthenticated: true, redirectPath: "/login" });
   const isAdmin = user?.role === "admin";
 
@@ -93,6 +102,40 @@ export default function TraineeBriefFiles() {
     { departmentId: selectedDept },
     { placeholderData: (prev: any) => prev }
   );
+  const { data: allFiles } = trpc.briefFiles.listAll.useQuery(undefined, {
+    enabled: isAdmin,
+  });
+  const utils = trpc.useUtils();
+
+  const createMutation = trpc.briefFiles.create.useMutation({
+    onSuccess: () => {
+      utils.briefFiles.list.invalidate();
+      utils.briefFiles.listAll.invalidate();
+      setShowForm(false);
+      toast.success("تم إضافة الدورة السريعة");
+    },
+    onError: (err: any) => toast.error(err?.message || "فشل الإضافة"),
+  });
+  const updateMutation = trpc.briefFiles.update.useMutation({
+    onSuccess: () => {
+      utils.briefFiles.list.invalidate();
+      utils.briefFiles.listAll.invalidate();
+      setEditingId(null);
+      toast.success("تم تحديث الدورة السريعة");
+    },
+    onError: (err: any) => toast.error(err?.message || "فشل التحديث"),
+  });
+  const deleteMutation = trpc.briefFiles.delete.useMutation({
+    onSuccess: () => {
+      utils.briefFiles.list.invalidate();
+      utils.briefFiles.listAll.invalidate();
+      toast.success("تم حذف الدورة السريعة");
+    },
+    onError: (err: any) => toast.error(err?.message || "فشل الحذف"),
+  });
+
+  // للمدير: استخدام listAll لعرض المسوّدات أيضاً
+  const displayFiles = isAdmin ? allFiles : briefFiles;
 
   useEffect(() => {
     if (!isAdmin && user?.departmentId) setSelectedDept(user.departmentId);
@@ -109,7 +152,7 @@ export default function TraineeBriefFiles() {
   const filesByDept =
     departments?.reduce(
       (acc, dept) => {
-        const files = briefFiles?.filter(f => f.departmentId === dept.id) ?? [];
+        const files = displayFiles?.filter(f => f.departmentId === dept.id) ?? [];
         if (files.length > 0) acc[dept.id] = { dept, files };
         return acc;
       },
@@ -117,12 +160,12 @@ export default function TraineeBriefFiles() {
         number,
         {
           dept: NonNullable<typeof departments>[0];
-          files: NonNullable<typeof briefFiles>;
+          files: NonNullable<typeof displayFiles>;
         }
       >
     ) ?? {};
 
-  const unassignedFiles = briefFiles?.filter(f => !f.departmentId) ?? [];
+  const unassignedFiles = displayFiles?.filter(f => !f.departmentId) ?? [];
 
   const handleDownload = (file: {
     fileUrl?: string | null;
@@ -145,6 +188,26 @@ export default function TraineeBriefFiles() {
   return (
     <PortalLayout role="trainee" title="الدورات السريعة">
       <div className="space-y-5">
+        {isAdmin && (
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              onClick={() => setShowForm(!showForm)}
+              className="gap-2 font-bold"
+            >
+              <Plus className="h-4 w-4" />
+              {showForm ? "إغلاق" : "إضافة دورة سريعة"}
+            </Button>
+          </div>
+        )}
+        {isAdmin && showForm && (
+          <BriefFileForm
+            departments={departments ?? []}
+            onSave={(data: any) => createMutation.mutate(data)}
+            onCancel={() => setShowForm(false)}
+            isLoading={createMutation.isPending}
+          />
+        )}
         {/* فلتر الإدارات للمدير فقط */}
         {isAdmin && <div className="flex flex-wrap gap-2">
           <Button variant="ghost" 
@@ -194,7 +257,7 @@ export default function TraineeBriefFiles() {
               </div>
             ))}
           </div>
-        ) : !briefFiles?.length ? (
+        ) : !displayFiles?.length ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <FileText className="h-14 w-14 text-muted-foreground/30 mb-4" />
             <h3 className="text-foreground mb-2">لا توجد ملفات</h3>
@@ -301,6 +364,25 @@ export default function TraineeBriefFiles() {
 
                               {/* أزرار الإجراءات */}
                               <div className="flex flex-col gap-1.5 flex-shrink-0">
+                                {file.fileUrl && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setViewerFile({
+                                        url: file.fileUrl as string,
+                                        type: file.fileType,
+                                        title: file.title,
+                                      })
+                                    }
+                                    title="عرض الملف"
+                                    className={cn(
+                                      "w-9 h-9 rounded-md flex items-center justify-center transition-all duration-200",
+                                      "bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground"
+                                    )}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </button>
+                                )}
                                 {/*زر فتح في نافذة جديدة*/}
                                 {file.fileUrl && (
                                   <a
@@ -310,7 +392,7 @@ export default function TraineeBriefFiles() {
                                     title="فتح الملف"
                                     className={cn(
                                       "w-9 h-9 rounded-md flex items-center justify-center transition-all duration-200",
-                                      "bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground"
+                                      "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground"
                                     )}
                                   >
                                     <Download className="h-4 w-4" />
@@ -370,12 +452,28 @@ export default function TraineeBriefFiles() {
                             )}
                           </div>
                           {file.fileUrl && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setViewerFile({
+                                  url: file.fileUrl as string,
+                                  type: file.fileType,
+                                  title: file.title,
+                                })
+                              }
+                              title="عرض الملف"
+                              className="w-9 h-9 rounded-md bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground flex items-center justify-center transition-all duration-200 flex-shrink-0"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          )}
+                          {file.fileUrl && (
                             <a
                               href={file.fileUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               title="فتح الملف"
-                              className="w-9 h-9 rounded-md bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground flex items-center justify-center transition-all duration-200 flex-shrink-0"
+                              className="w-9 h-9 rounded-md bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground flex items-center justify-center transition-all duration-200 flex-shrink-0"
                             >
                               <Download className="h-4 w-4" />
                             </a>
@@ -390,6 +488,13 @@ export default function TraineeBriefFiles() {
           </div>
         )}
       </div>
+      <FileViewerModal
+        open={!!viewerFile}
+        onClose={() => setViewerFile(null)}
+        fileUrl={viewerFile?.url ?? ""}
+        fileType={viewerFile?.type}
+        title={viewerFile?.title}
+      />
     </PortalLayout>
   );
 }

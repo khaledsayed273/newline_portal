@@ -18,15 +18,13 @@ import TraineeBriefFiles from "./pages/trainee/TraineeBriefFiles";
 import TraineeQuizzes from "./pages/trainee/TraineeQuizzes";
 import TraineeCertificates from "./pages/trainee/TraineeCertificates";
 import TraineeFAQs from "./pages/trainee/TraineeFAQs";
-import TraineeTrainingRequest from "./pages/trainee/TraineeTrainingRequest";
-import TraineeSuggestions from "./pages/trainee/TraineeSuggestions";
+import ServiceManagement from "./pages/ServiceManagement";
 import TraineeJobDescriptions from "./pages/trainee/TraineeJobDescriptions";
 import PathCertificate from "./pages/trainee/PathCertificate";
 import TrainingMap from "./pages/TrainingMap";
 import TrainingLibrary from "./pages/TrainingLibrary";
 import TraineeGeneralCulture from "./pages/trainee/TraineeGeneralCulture";
 import TraineeOrientationPath from "./pages/trainee/TraineeOrientationPath";
-import TraineeConsultations from "./pages/trainee/TraineeConsultations";
 import TraineeStats from "./pages/trainee/TraineeStats";
 
 // صفحات المدير
@@ -38,9 +36,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminDepartments from "./pages/admin/AdminDepartments";
 import AdminEmployeeStats from "./pages/admin/AdminEmployeeStats";
 import AdminEmployeeDetails from "./pages/admin/AdminEmployeeDetails";
-import AdminTrainingRequests from "./pages/admin/AdminTrainingRequests";
 import AdminIncidents from "./pages/admin/AdminIncidents";
-import AdminSuggestions from "./pages/admin/AdminSuggestions";
 
 function Router() {
   const { user, loading } = useAuth({
@@ -70,7 +66,7 @@ function Router() {
       <Route path="/dashboard" component={TraineeDashboard} />
       <Route path="/quick-courses" component={TraineeBriefFiles} />
       <Route path="/general-culture" component={TraineeGeneralCulture} />
-      <Route path="/consultations" component={TraineeConsultations} />
+      <Route path="/services" component={ServiceManagement} />
       <Route path="/stats" component={TraineeStats} />
       <Route path="/courses" component={TraineeCourses} />
       <Route path="/courses/:id" component={TraineeCourseDetail} />
@@ -79,8 +75,6 @@ function Router() {
       <Route path="/quizzes" component={TraineeQuizzes} />
       <Route path="/certificates" component={TraineeCertificates} />
       <Route path="/faqs" component={TraineeFAQs} />
-      <Route path="/training-request" component={TraineeTrainingRequest} />
-      <Route path="/suggestions" component={TraineeSuggestions} />
       <Route path="/job-descriptions" component={TraineeJobDescriptions} />
       <Route path="/certificate/path/:pathId" component={PathCertificate} />
       <Route path="/training-map" component={TraineeOrientationPath} />
@@ -96,12 +90,7 @@ function Router() {
       <Route path="/admin/departments" component={AdminDepartments} />
       <Route path="/admin/employee-stats" component={AdminEmployeeStats} />
       <Route path="/admin/employees/:employeeId" component={AdminEmployeeDetails} />
-      <Route
-        path="/admin/training-requests"
-        component={AdminTrainingRequests}
-      />
       <Route path="/admin/incidents" component={AdminIncidents} />
-      <Route path="/admin/suggestions" component={AdminSuggestions} />
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

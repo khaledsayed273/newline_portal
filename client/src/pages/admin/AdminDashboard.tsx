@@ -37,7 +37,7 @@ export default function AdminDashboard() {
       bg: "bg-primary/10",
     },
     {
-      label: "الملفات المختصرة",
+      label: "الدورات السريعة",
       value: stats?.briefFiles,
       icon: FileText,
       color: "text-primary",
@@ -146,8 +146,8 @@ export default function AdminDashboard() {
               },
               {
                 href: "/admin/brief-files",
-                label: "إدارة الملفات",
-                desc: "رفع وتنظيم الملفات المختصرة",
+                label: "إدارة الدورات السريعة",
+                desc: "رفع وتنظيم الدورات السريعة",
                 icon: FileText,
               },
               {
@@ -157,9 +157,9 @@ export default function AdminDashboard() {
                 icon: Users,
               },
               {
-                href: "/admin/training-requests",
-                label: "طلبات التدريب",
-                desc: "مراجعة والرد على الطلبات",
+                href: "/services",
+                label: "إدارة الخدمات",
+                desc: "الاستشارات والطلبات والاقتراحات",
                 icon: Send,
               },
               {
